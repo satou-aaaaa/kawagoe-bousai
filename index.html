@@ -61,6 +61,19 @@ nav .share-tab{border-color:var(--acc)}
 .count{text-align:center;font-weight:bold;color:var(--ok)}
 .recv{background:var(--card);border-radius:10px;padding:8px 12px}
 .nojs{max-width:720px;margin:0 auto;padding:0 16px}
+/* 道順 */
+.rw{font-weight:bold;color:var(--acc)}.rw:empty{display:none}
+.rbtn{align-self:flex-start;margin:4px 0}
+#route:empty{display:none}
+#route{border:2px solid var(--acc);border-radius:12px;padding:10px;margin:10px 0;background:var(--card);scroll-margin-top:64px}
+#route h2{margin-top:0}
+.rmap{margin:8px auto;max-width:420px}.rmap svg{width:100%;height:auto;border-radius:8px}
+.rmap figcaption{color:var(--mut);font-size:.8rem;text-align:center}
+.rbg{fill:#fff}.rd{fill:none;stroke:#bbb;stroke-width:1.2;stroke-linecap:round}.rh{fill:none;stroke:#4fa3e0;stroke-width:3;stroke-linecap:round;opacity:.8}
+.rt{fill:none;stroke:#b3261e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.goal{fill:#b3261e;stroke:#fff;stroke-width:2}
+.rmap .north{fill:#b3261e}.rmap .me{fill:#111;stroke:#fff;stroke-width:2}
+.rsteps li{margin:.35em 0}
 </style>
 </head>
 <body>
@@ -191,6 +204,30 @@ window.T = {
     shareFileBtn: "ファイルで渡す（AirDrop・クイック共有）",
     shareFileSaved: "この端末では直接送れないため、ファイルを保存しました。「ファイル」アプリから共有してください。",
     shareCount: "これまでに {n} 回 配りました。",
+    routeBtn: "道順",
+    routeT: "{name} までの道順",
+    routeWalk: "歩いて約{d}（{min}分）",
+    routeLoading: "道を探しています…",
+    routeNone: "この画面には道のデータがないため、方角と直線の距離だけ出しています。電波のあるときに一度アプリを開くと、道順も保存されます。",
+    routeFar: "いる場所が道のデータから{d}はなれています。近くの道に出てから使ってください。",
+    routeAvoid: "なるべく避けた所：{list}",
+    routeStill: "この道でも通る所：{list}。気をつけて進んでください。",
+    routeNote: "浸水・土砂の区域は「想定」です。いまの通行止め・がれき・水の深さは分かりません。目で見て危なければ、引き返して別の道へ。",
+    routeSrc: "道：国土地理院 ベクトルタイル。浸水・家屋倒壊・土砂災害の区域：国土数値情報（国土交通省、洪水浸水想定区域 2024・土砂災害警戒区域 2024）。",
+    routeMapNote: "上が北。赤い太線が道順、●が出発、■が着く所。青い道は、いまの災害で避けたい道。",
+    stepTurn: "{d} 進んで {turn}",
+    stepEnd: "{d} 進むと着きます",
+    turnR: "右へ",
+    turnL: "左へ",
+    hBridge: "橋",
+    hTunnel: "地下道・トンネル",
+    hStairs: "階段",
+    hNarrow: "細い道（幅3m未満）",
+    hRiver: "川・水路のそば",
+    hFlood: "浸水想定0.5〜3m",
+    hDeep: "浸水想定3m以上",
+    hCollapse: "家が流されるおそれのある区域",
+    hSlope: "土砂災害警戒区域",
     recvT: "③ 受け取った人へ（この画面を見せてください）",
     recvIos: "iPhone：AirDropで受け取る →「ファイル」アプリで kawagoe-bousai.html をタップして開く。",
     recvAndroid: "Android：受け取ったら「ファイル」アプリで kawagoe-bousai.html を開き、Chromeを選ぶ。",
@@ -286,6 +323,30 @@ window.T = {
     shareFileBtn: "ファイルで わたす（AirDrop・クイック共有）",
     shareFileSaved: "この スマホでは おくれません。ファイルを ほぞんしました。「ファイル」アプリから わたして ください。",
     shareCount: "いままでに {n}かい くばりました。",
+    routeBtn: "みちじゅん",
+    routeT: "{name} までの みちじゅん",
+    routeWalk: "あるいて やく{d}（{min}ふん）",
+    routeLoading: "みちを さがして います…",
+    routeNone: "この がめんには みちの データが ありません。ほうがくと まっすぐの きょりだけ だして います。でんぱが ある ときに いちど アプリを ひらくと、みちじゅんも ほぞん されます。",
+    routeFar: "いる ばしょが みちの データから {d} はなれて います。ちかくの みちに でてから つかって ください。",
+    routeAvoid: "なるべく さけた ところ：{list}",
+    routeStill: "この みちでも とおる ところ：{list}。きを つけて すすんで ください。",
+    routeNote: "みずや どしゃの くいきは「よそう」です。いまの とおれない みち・がれき・みずの ふかさは わかりません。みて あぶなければ、もどって ほかの みちへ。",
+    routeSrc: "みち：こくどちりいん。みずや どしゃの くいき：こくどすうちじょうほう（こくどこうつうしょう）。",
+    routeMapNote: "うえが きた。あかい ふとい せんが みちじゅん、●が スタート、■が つく ところ。あおい みちは さけたい みち。",
+    stepTurn: "{d} すすんで {turn}",
+    stepEnd: "{d} すすむと つきます",
+    turnR: "みぎへ",
+    turnL: "ひだりへ",
+    hBridge: "はし",
+    hTunnel: "ちかどう・トンネル",
+    hStairs: "かいだん",
+    hNarrow: "ほそい みち",
+    hRiver: "かわ・すいろの そば",
+    hFlood: "みずに つかる よそう 0.5〜3m",
+    hDeep: "みずに つかる よそう 3m いじょう",
+    hCollapse: "いえが ながされる おそれの ある ところ",
+    hSlope: "どしゃさいがい けいかい くいき",
     recvT: "③ うけとった ひとへ（この がめんを みせて ください）",
     recvIos: "iPhone：AirDropで うけとる →「ファイル」アプリで kawagoe-bousai.html を おす。",
     recvAndroid: "Android：「ファイル」アプリで kawagoe-bousai.html を ひらいて、Chromeを えらぶ。",
@@ -381,6 +442,30 @@ window.T = {
     shareFileBtn: "Send as a file (AirDrop / Quick Share)",
     shareFileSaved: "This device cannot send it directly, so the file was saved. Share it from your Files app.",
     shareCount: "You have shared it {n} times.",
+    routeBtn: "Route",
+    routeT: "Route to {name}",
+    routeWalk: "About {d} on foot ({min} min)",
+    routeLoading: "Finding a route…",
+    routeNone: "Road data is not available on this screen, so only the direction and straight-line distance are shown. Open the app once while online to save routes too.",
+    routeFar: "You are {d} away from the road data. Move to a nearby road first.",
+    routeAvoid: "Avoided where possible: {list}",
+    routeStill: "This route still passes: {list}. Take care.",
+    routeNote: "Flood and landslide areas are forecasts. Current closures, debris and water depth are unknown. If it looks dangerous, turn back and take another road.",
+    routeSrc: "Roads: GSI Japan vector tiles. Flood, house-collapse and landslide areas: National Land Numerical Information (MLIT), 2024.",
+    routeMapNote: "North is up. Thick red line: route. ●: start. ■: destination. Blue roads: roads to avoid in this disaster.",
+    stepTurn: "Go {d}, then turn {turn}",
+    stepEnd: "Go {d} to arrive",
+    turnR: "right",
+    turnL: "left",
+    hBridge: "bridges",
+    hTunnel: "underpasses and tunnels",
+    hStairs: "stairs",
+    hNarrow: "narrow roads (under 3 m)",
+    hRiver: "riversides and canals",
+    hFlood: "flood forecast 0.5–3 m",
+    hDeep: "flood forecast 3 m+",
+    hCollapse: "areas where houses may be swept away",
+    hSlope: "landslide warning areas",
     recvT: "③ For the person receiving (show them this screen)",
     recvIos: "iPhone: accept the AirDrop → in the Files app, tap kawagoe-bousai.html to open it.",
     recvAndroid: "Android: after receiving, open kawagoe-bousai.html in the Files app and choose Chrome.",
@@ -476,6 +561,30 @@ window.T = {
     shareFileBtn: "用文件传送（AirDrop・快速分享）",
     shareFileSaved: "本设备无法直接发送，已保存文件。请从“文件”应用分享。",
     shareCount: "你已经分享了 {n} 次。",
+    routeBtn: "路线",
+    routeT: "前往 {name} 的路线",
+    routeWalk: "步行约 {d}（{min} 分钟）",
+    routeLoading: "正在查找路线…",
+    routeNone: "此画面没有道路数据，只显示方向和直线距离。请在有信号时打开一次应用，路线也会被保存。",
+    routeFar: "你所在的位置距离道路数据 {d}。请先走到附近的道路上。",
+    routeAvoid: "尽量避开了：{list}",
+    routeStill: "这条路线仍会经过：{list}。请注意安全。",
+    routeNote: "浸水和土石流区域只是预测。无法得知当前的封路、瓦砾和水深。看到危险请返回，改走其他道路。",
+    routeSrc: "道路：日本国土地理院 矢量瓦片。浸水、房屋倒塌、土石流区域：国土数值信息（国土交通省，2024）。",
+    routeMapNote: "上方为北。红色粗线为路线，●为出发点，■为目的地。蓝色道路是此次灾害中应避开的道路。",
+    stepTurn: "前进 {d}，然后{turn}",
+    stepEnd: "前进 {d} 即到达",
+    turnR: "右转",
+    turnL: "左转",
+    hBridge: "桥",
+    hTunnel: "地下通道・隧道",
+    hStairs: "台阶",
+    hNarrow: "窄路（不足3米）",
+    hRiver: "河流・水渠旁",
+    hFlood: "预计浸水0.5〜3米",
+    hDeep: "预计浸水3米以上",
+    hCollapse: "房屋可能被冲走的区域",
+    hSlope: "土石流警戒区域",
     recvT: "③ 给收到的人（请出示这个画面）",
     recvIos: "iPhone：接收AirDrop → 在“文件”应用中点击 kawagoe-bousai.html 打开。",
     recvAndroid: "Android：收到后在“文件”应用中打开 kawagoe-bousai.html，选择Chrome。",
@@ -571,6 +680,30 @@ window.T = {
     shareFileBtn: "파일로 보내기(AirDrop・Quick Share)",
     shareFileSaved: "이 기기에서는 바로 보낼 수 없어 파일을 저장했습니다. \"파일\" 앱에서 공유하세요.",
     shareCount: "지금까지 {n}번 나눴습니다.",
+    routeBtn: "길 안내",
+    routeT: "{name}까지 가는 길",
+    routeWalk: "걸어서 약 {d}({min}분)",
+    routeLoading: "길을 찾고 있습니다…",
+    routeNone: "이 화면에는 도로 데이터가 없어 방향과 직선거리만 표시합니다. 신호가 있을 때 앱을 한 번 열면 길 안내도 저장됩니다.",
+    routeFar: "현재 위치가 도로 데이터에서 {d} 떨어져 있습니다. 가까운 도로로 나간 뒤 사용하세요.",
+    routeAvoid: "가능한 한 피한 곳: {list}",
+    routeStill: "이 길에서도 지나는 곳: {list}. 조심하세요.",
+    routeNote: "침수·토사 구역은 '예측'입니다. 지금의 통행금지, 잔해, 물의 깊이는 알 수 없습니다. 위험해 보이면 되돌아가 다른 길로 가세요.",
+    routeSrc: "도로: 일본 국토지리원 벡터 타일. 침수·가옥 붕괴·토사 재해 구역: 국토수치정보(국토교통성, 2024).",
+    routeMapNote: "위쪽이 북쪽. 빨간 굵은 선이 길, ●가 출발, ■가 도착. 파란 길은 이번 재해에서 피해야 할 길.",
+    stepTurn: "{d} 가서 {turn}",
+    stepEnd: "{d} 가면 도착",
+    turnR: "오른쪽으로",
+    turnL: "왼쪽으로",
+    hBridge: "다리",
+    hTunnel: "지하도·터널",
+    hStairs: "계단",
+    hNarrow: "좁은 길(폭 3m 미만)",
+    hRiver: "강·수로 옆",
+    hFlood: "침수 예상 0.5~3m",
+    hDeep: "침수 예상 3m 이상",
+    hCollapse: "집이 떠내려갈 우려가 있는 구역",
+    hSlope: "토사재해 경계구역",
     recvT: "③ 받은 사람에게(이 화면을 보여 주세요)",
     recvIos: "iPhone: AirDrop을 받기 → \"파일\" 앱에서 kawagoe-bousai.html을 눌러 열기.",
     recvAndroid: "Android: 받은 뒤 \"파일\" 앱에서 kawagoe-bousai.html을 열고 Chrome을 선택.",
@@ -587,6 +720,155 @@ window.SPOTS = [
   { id: "kitain", lat: 35.917866, lon: 139.488556, name: { ja: "喜多院", easy: "きたいん", en: "Kitain Temple", zh: "喜多院", ko: "기타인" } },
   { id: "hikawa", lat: 35.927532, lon: 139.488831, name: { ja: "川越氷川神社", easy: "かわごえひかわじんじゃ", en: "Kawagoe Hikawa Shrine", zh: "川越冰川神社", ko: "가와고에 히카와 신사" } },
 ];
+</script>
+<script>
+// 道順：危ない所をなるべく避けて歩く道を、この端末の中だけで探す（data/roads.js を使う。外へは何も送らない）。
+// 道の印は tools/build-roads.py と同じビット。重みは「道の長さに掛ける数」で、大きいほど避ける。
+(function () {
+  "use strict";
+  const BR = 1, TU = 2, ST = 4, NA = 8, RV = 16, F1 = 32, F2 = 64, CO = 128, SL = 256;
+  const BITS = [[BR, "hBridge"], [TU, "hTunnel"], [ST, "hStairs"], [NA, "hNarrow"], [RV, "hRiver"], [F1, "hFlood"], [F2, "hDeep"], [CO, "hCollapse"], [SL, "hSlope"]];
+  // 地震：細い道（ブロック塀・倒れた家）・崖・橋・地下道。大雨：浸水・家屋倒壊・川のそば・地下道（冠水）・橋。火事：細い道（燃え広がる・ふさがる）
+  const W = {
+    quake: { [BR]: 1.5, [TU]: 2, [ST]: 1.5, [NA]: 2.5, [RV]: 1.5, [SL]: 20 },
+    flood: { [BR]: 4, [TU]: 30, [ST]: 1.2, [RV]: 5, [F1]: 4, [F2]: 15, [CO]: 30, [SL]: 20 },
+    fire: { [BR]: 1.2, [TU]: 3, [ST]: 1.5, [NA]: 4, [SL]: 5 },
+    none: {}, // 検査用：危なさを見ない、ただの近道
+  };
+  const Q = 1e5, M_LAT = 111320, M_LON = 111320 * Math.cos((35.9 * Math.PI) / 180), CELL = 500; // 近い点を探す升目（1e-5 度で 500 = 約 500m）
+  let G = null, loading = null;
+
+  function build(R) {
+    const nn = R.n.length / 2, lon = new Float64Array(nn), lat = new Float64Array(nn);
+    let x = 0, y = 0;
+    for (let i = 0; i < nn; i++) { x += R.n[2 * i]; y += R.n[2 * i + 1]; lon[i] = x; lat[i] = y; }
+    const ne = R.e.length, ea = new Int32Array(ne), eb = new Int32Array(ne), el = new Float64Array(ne), ef = new Int32Array(ne), deg = new Int32Array(nn + 1);
+    R.e.forEach((r, i) => { ea[i] = r[0]; eb[i] = r[1]; el[i] = r[2]; ef[i] = r[3]; deg[r[0] + 1]++; deg[r[1] + 1]++; });
+    for (let i = 0; i < nn; i++) deg[i + 1] += deg[i];
+    const adj = new Int32Array(2 * ne), fill = deg.slice(0, nn);
+    for (let i = 0; i < ne; i++) { adj[fill[ea[i]]++] = i; adj[fill[eb[i]]++] = i; }
+    const grid = new Map();
+    for (let i = 0; i < nn; i++) { const k = Math.floor(lon[i] / CELL) + "," + Math.floor(lat[i] / CELL); (grid.get(k) || grid.set(k, []).get(k)).push(i); }
+    return { R, nn, lon, lat, ea, eb, el, ef, deg, adj, grid };
+  }
+  function load() {
+    if (G) return Promise.resolve(G);
+    if (window.ROADS) return Promise.resolve((G = build(window.ROADS)));
+    if (loading) return loading;
+    loading = new Promise((ok, ng) => {
+      if (location.protocol === "file:") { loading = null; return ng(new Error("no roads")); }
+      const s = document.createElement("script");
+      s.src = "./data/roads.js";
+      s.onload = () => (window.ROADS ? ok((G = build(window.ROADS))) : ng(new Error("no roads")));
+      s.onerror = () => { loading = null; s.remove(); ng(new Error("load")); };
+      document.head.appendChild(s);
+    });
+    return loading;
+  }
+  const meters = (lat1, lon1, lat2, lon2) => Math.hypot((lon1 - lon2) * M_LON, (lat1 - lat2) * M_LAT);
+  function snap(p) {
+    const X = p.lon * Q, Y = p.lat * Q, cx = Math.floor(X / CELL), cy = Math.floor(Y / CELL);
+    let best = -1, bd = Infinity;
+    for (let r = 0; r <= 3 && (best < 0 || r <= 1); r++) {
+      for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        for (const i of G.grid.get(cx + dx + "," + (cy + dy)) || []) { const d = meters(Y / Q, X / Q, G.lat[i] / Q, G.lon[i] / Q); if (d < bd) { bd = d; best = i; } }
+      }
+    }
+    return { i: best, d: bd };
+  }
+  function weight(f, hz) {
+    const w = W[hz] || W.quake;
+    if (!Object.keys(w).length) return 1;
+    let k = 1;
+    for (const [b] of BITS) if (f & b && w[b]) k *= w[b];
+    return Math.min(k, 200);
+  }
+  // 出発点から、行き先の点ぜんぶまで（重みつきの）いちばん近い道を探す
+  function routes(from, targets, hz) {
+    const s = snap(from), goals = targets.map(snap), want = new Set(goals.map((g) => g.i));
+    const dist = new Float64Array(G.nn).fill(Infinity), prev = new Int32Array(G.nn).fill(-1), done = new Uint8Array(G.nn);
+    const hk = [], hv = [];
+    const push = (v, k) => { let i = hk.length; hk.push(k); hv.push(v); while (i > 0) { const p = (i - 1) >> 1; if (hk[p] <= k) break; hk[i] = hk[p]; hv[i] = hv[p]; i = p; } hk[i] = k; hv[i] = v; };
+    const pop = () => { const v = hv[0], lk = hk.pop(), lv = hv.pop(); if (hk.length) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= hk.length) break; if (c + 1 < hk.length && hk[c + 1] < hk[c]) c++; if (hk[c] >= lk) break; hk[i] = hk[c]; hv[i] = hv[c]; i = c; } hk[i] = lk; hv[i] = lv; } return v; };
+    dist[s.i] = 0; push(s.i, 0);
+    let left = want.size;
+    while (hk.length && left) {
+      const u = pop();
+      if (done[u]) continue;
+      done[u] = 1;
+      if (want.has(u)) left--;
+      for (let j = G.deg[u]; j < G.deg[u + 1]; j++) {
+        const e = G.adj[j], v = G.ea[e] === u ? G.eb[e] : G.ea[e], nd = dist[u] + G.el[e] * weight(G.ef[e], hz);
+        if (nd < dist[v]) { dist[v] = nd; prev[v] = e; push(v, nd); }
+      }
+    }
+    return goals.map((g) => {
+      if (!done[g.i]) return null;
+      const edges = [];
+      for (let v = g.i; v !== s.i; ) { const e = prev[v]; const a = G.ea[e] === v ? G.eb[e] : G.ea[e]; edges.push([e, a]); v = a; }
+      edges.reverse();
+      const pts = [[G.lat[s.i] / Q, G.lon[s.i] / Q]], seg = [];
+      let len = 0;
+      const by = {};
+      for (const [e, a] of edges) {
+        const row = G.R.e[e], fwd = G.ea[e] === a;
+        const mids = [];
+        let x = G.lon[G.ea[e]], y = G.lat[G.ea[e]];
+        for (let k = 4; k < row.length; k += 2) { x += row[k]; y += row[k + 1]; mids.push([y / Q, x / Q]); }
+        if (!fwd) mids.reverse();
+        const b = fwd ? G.eb[e] : G.ea[e];
+        const part = mids.concat([[G.lat[b] / Q, G.lon[b] / Q]]);
+        seg.push({ from: pts.length - 1, to: pts.length - 1 + part.length, f: G.ef[e], len: G.el[e] });
+        pts.push(...part);
+        len += G.el[e];
+        for (const [bit] of BITS) if (G.ef[e] & bit) by[bit] = (by[bit] || 0) + G.el[e];
+      }
+      return { len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
+    });
+  }
+  // 曲がる所（35度より大きく向きが変わる所）で区切った案内
+  function steps(r) {
+    const brg = (a, b) => (Math.atan2((b[1] - a[1]) * M_LON, (b[0] - a[0]) * M_LAT) * 180) / Math.PI;
+    const out = [];
+    let run = r.startGap;
+    for (let i = 1; i < r.pts.length; i++) {
+      run += meters(r.pts[i - 1][0], r.pts[i - 1][1], r.pts[i][0], r.pts[i][1]);
+      if (i === r.pts.length - 1) break;
+      let d = brg(r.pts[i], r.pts[i + 1]) - brg(r.pts[i - 1], r.pts[i]);
+      d = ((d + 540) % 360) - 180;
+      if (Math.abs(d) > 35 && run >= 15) { out.push({ d: run, turn: d > 0 ? "R" : "L" }); run = 0; }
+    }
+    out.push({ d: run + r.endGap, turn: "end" });
+    return out;
+  }
+  // 上が北の道の地図（SVG）。まわりの道は細い灰色、いまの災害で避けたい道は色つき、道順は太い線
+  function svg(r, hz, label) {
+    const ps = r.pts;
+    let s = Infinity, n = -Infinity, w = Infinity, e = -Infinity;
+    for (const [la, lo] of ps) { s = Math.min(s, la); n = Math.max(n, la); w = Math.min(w, lo); e = Math.max(e, lo); }
+    const cy = (s + n) / 2, cx = (w + e) / 2;
+    let hw = Math.max(((e - w) * M_LON) / 2, ((n - s) * M_LAT) / 2, 200) * 1.15; // 半分の幅（m）
+    const S = 300, k = S / 2 / hw;
+    const X = (lo) => (S / 2 + (lo - cx) * M_LON * k).toFixed(1), Y = (la) => (S / 2 - (la - cy) * M_LAT * k).toFixed(1);
+    const bw = cx - hw / M_LON, be = cx + hw / M_LON, bs = cy - hw / M_LAT, bn = cy + hw / M_LAT, wt = W[hz] || W.quake;
+    const inb = (i) => { const lo = G.lon[i] / Q, la = G.lat[i] / Q; return lo > bw && lo < be && la > bs && la < bn; };
+    let bg = "", hzd = "";
+    for (let i = 0; i < G.ea.length; i++) {
+      if (!inb(G.ea[i]) && !inb(G.eb[i])) continue;
+      const row = G.R.e[i];
+      let x = G.lon[G.ea[i]], y = G.lat[G.ea[i]], d = "M" + X(x / Q) + " " + Y(y / Q);
+      for (let j = 4; j < row.length; j += 2) { x += row[j]; y += row[j + 1]; d += "L" + X(x / Q) + " " + Y(y / Q); }
+      d += "L" + X(G.lon[G.eb[i]] / Q) + " " + Y(G.lat[G.eb[i]] / Q);
+      if (weight(G.ef[i], hz) >= 2.5) hzd += d; else bg += d;
+    }
+    const line = ps.map((p, i) => (i ? "L" : "M") + X(p[1]) + " " + Y(p[0])).join("");
+    const a = ps[0], z = ps[ps.length - 1];
+    return `<svg viewBox="0 0 ${S} ${S}" role="img" aria-label="${label}"><rect width="${S}" height="${S}" class="rbg"/><path d="${bg}" class="rd"/><path d="${hzd}" class="rh"/><path d="${line}" class="rt"/>` +
+      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/></svg>`;
+  }
+  window.ROUTE = { load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
+})();
 </script>
 <script>
 // 川越 避難ガイドの動き。外へは何も送らない（現在地もこの端末の中だけで使う）。
@@ -606,6 +888,7 @@ window.SPOTS = [
     here: null, // { lat, lon, label }
     heading: null,
     tab: "near",
+    route: null, // 道順を出している一覧の番号
   };
   const t = (k) => (T[st.lang] && T[st.lang][k] !== undefined ? T[st.lang][k] : T.ja[k]);
   const fmt = (s, o) => String(s).replace(/\{(\w+)\}/g, (_, k) => o[k]);
@@ -660,8 +943,9 @@ window.SPOTS = [
         if (st.hz === "flood" && p.f) tags.push(`<span class="tag up">${esc(fmt(t("floorUp"), { n: p.f }))}</span>`);
         if (p.s) tags.push(`<span class="tag">${esc(t("shelterMark"))}</span>`);
         const map = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
-        return `<li><span class="no">${i + 1}</span>${arrow(x.b)}<div class="pl"><b>${esc(p.n)}</b><span class="dd">${esc(dirName(x.b))} ${esc(dist(x.d))}</span><span class="ad">${esc(p.a)}</span>${tags.join("")}${p.note ? `<span class="nt">${esc(p.note)}</span>` : ""}<a href="${map}" target="_blank" rel="noopener">${esc(t("openMap"))}</a></div></li>`;
+        return `<li><span class="no">${i + 1}</span>${arrow(x.b)}<div class="pl"><b>${esc(p.n)}</b><span class="dd">${esc(dirName(x.b))} ${esc(dist(x.d))}</span><span class="ad">${esc(p.a)}</span>${tags.join("")}${p.note ? `<span class="nt">${esc(p.note)}</span>` : ""}<span class="rw" data-rw="${i}"></span><button type="button" class="sub rbtn" data-route="${i}" aria-pressed="${st.route === i}">🚶 ${esc(t("routeBtn"))}</button><a href="${map}" target="_blank" rel="noopener">${esc(t("openMap"))}</a></div></li>`;
       }).join("") + `</ol>`;
+      body += `<section id="route" aria-live="polite"></section>`;
       body += miniMap(list);
       body += `<p><button type="button" class="sub" id="compass">${esc(t("compass"))}</button> <span class="hint" id="compass-msg"></span></p>`;
     }
@@ -715,6 +999,41 @@ window.SPOTS = [
     v.innerHTML = st.tab === "near" ? nearHTML() : st.tab === "do" ? doHTML() : st.tab === "talk" ? talkHTML() : st.tab === "share" ? shareHTML() : infoHTML();
     v.setAttribute("aria-labelledby", "tab-" + st.tab);
     status();
+    if (st.tab === "near" && st.here) fillRoutes();
+    if (st.tab === "share") ROUTE.load().catch(() => {}); // 渡すファイルに道のデータも入れるので、先に読んでおく（押してから待たせない）
+  }
+
+  // 道順（src/route.js）。道のデータは大きいので、場所が決まってから読む
+  let rc = { key: "", res: null };
+  const walk = (m) => fmt(t("routeWalk"), { d: dist(m), min: Math.max(1, Math.ceil(m / 60)) }); // 災害のときは分速60mで見る
+  function fillRoutes() {
+    const list = nearest(5), key = [st.here.lat, st.here.lon, st.hz].join();
+    const box = $("#route");
+    if (st.route != null && box && !ROUTE.ready()) box.innerHTML = `<p class="hint">${esc(t("routeLoading"))}</p>`;
+    ROUTE.load().then(() => {
+      if (rc.key !== key) rc = { key, res: ROUTE.routes(st.here, list.map((x) => x.p), st.hz === "fire" ? "fire" : st.hz) };
+      if (!$("#route")) return;
+      rc.res.forEach((r, i) => { const el = document.querySelector(`[data-rw="${i}"]`); if (el && r) el.textContent = walk(r.len); });
+      if (st.route != null) $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]);
+    }, () => {
+      const b = $("#route");
+      if (b && st.route != null) b.innerHTML = `<p class="warn">${esc(t("routeNone"))}</p>`;
+    });
+  }
+  function routeHTML(x, r) {
+    if (!x || !r) return `<p class="warn">${esc(t("routeNone"))}</p>`;
+    const hz = st.hz === "fire" ? "fire" : st.hz, w = ROUTE.W[hz];
+    const avoid = ROUTE.BITS.filter(([b]) => (w[b] || 1) >= 2), still = avoid.filter(([b]) => r.by[b] > 0);
+    const name = (k) => t(k);
+    const turn = (s) => s.turn === "end" ? fmt(t("stepEnd"), { d: dist(s.d) }) : fmt(t("stepTurn"), { d: dist(s.d), turn: t(s.turn === "R" ? "turnR" : "turnL") });
+    let h = `<h2>${esc(fmt(t("routeT"), { name: x.p.n }))}</h2><p class="dd">${esc(walk(r.len))}</p>`;
+    if (r.startGap > 300) h += `<p class="warn">${esc(fmt(t("routeFar"), { d: dist(r.startGap) }))}</p>`;
+    h += `<figure class="rmap">${ROUTE.svg(r, hz, esc(t("routeMapNote")))}<figcaption>${esc(t("routeMapNote"))}</figcaption></figure>`;
+    h += `<p class="hint">${esc(fmt(t("routeAvoid"), { list: avoid.map(([, k]) => name(k)).join("・") }))}</p>`;
+    if (still.length) h += `<p class="warn" id="route-still">${esc(fmt(t("routeStill"), { list: still.map(([b, k]) => name(k) + " " + dist(r.by[b])).join("・") }))}</p>`;
+    h += `<ol class="rsteps">${ROUTE.steps(r).map((s) => `<li>${esc(turn(s))}</li>`).join("")}</ol>`;
+    h += `<p class="warn">${esc(t("routeNote"))}</p><p class="hint">${esc(t("routeSrc"))}</p>`;
+    return h;
   }
   function status() {
     const el = $("#status");
@@ -729,7 +1048,7 @@ window.SPOTS = [
     if (!navigator.geolocation) { s.textContent = t("gpsFail"); return; }
     s.textContent = t("gpsWait");
     navigator.geolocation.getCurrentPosition(
-      (pos) => { st.here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; render(); },
+      (pos) => { st.here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; st.route = null; render(); },
       () => { $("#gps-state").textContent = t("gpsFail"); },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 },
     );
@@ -748,9 +1067,17 @@ window.SPOTS = [
     else start();
   }
   // ファイルで渡す。共有の画面（AirDrop・クイック共有）を開き、使えない端末ではファイルを保存する
+  const ROADS_MARK = 'id="roads' + '-data"'; // 本文にこの文字をそのまま書かない（app.js 自身が入った写しで見まちがえないように）
+  async function fileSource() {
+    if (SOURCE.includes("<script " + ROADS_MARK)) return SOURCE;
+    try { await ROUTE.load(); } catch (e) { return SOURCE; }
+    const data = "<script " + ROADS_MARK + ">window.ROADS = " + JSON.stringify(window.ROADS) + ";</" + "script>\n";
+    const at = SOURCE.lastIndexOf("</body>");
+    return SOURCE.slice(0, at) + data + SOURCE.slice(at);
+  }
   async function giveFile() {
     const msg = $("#give-msg");
-    const file = new File([SOURCE], "kawagoe-bousai.html", { type: "text/html" });
+    const file = new File([await fileSource()], "kawagoe-bousai.html", { type: "text/html" });
     const counted = () => { LS("kb-shared", String(Number(LS("kb-shared") || 0) + 1)); };
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: t("title") }); counted(); render(); return; }
@@ -765,12 +1092,14 @@ window.SPOTS = [
     msg.textContent = t("shareFileSaved");
   }
   window.KB.source = () => SOURCE; // 検査用
+  window.KB.fileSource = fileSource;
 
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
     if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
-    if (b.dataset.spot) { const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
+    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.spot) { st.route = null; const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
     if (b.id === "gps") return useGps();
     if (b.id === "compass") return compass();
     if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }

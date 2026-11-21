@@ -13,6 +13,7 @@ pip install qrcode==8.2    # index.html・print.html を作り直すとき（QR 
 
 ```bash
 python3 tools/build-data.py    # data/*.csv・city-list.json → data/places.js（データを取り直したとき）
+python3 tools/build-roads.py <タイル> <A31a> <A33.xml>   # data/roads.js（道のつながりと危なさの印。取り方は先頭の説明。道の印のビットを変えたら src/route.js の W も直す）
 python3 tools/build.py         # src/ + data/places.js → index.html（1つのファイルにまとめる。「みんなに配る」でそのまま人に渡すため。<noscript> の簡易表示も作る）
 python3 tools/build-print.py   # print.html（場所ごとの掲示用ポスター）
 ```
@@ -26,6 +27,7 @@ node qa/run.mjs
 ## 決まり
 
 - 外へ通信する部品を足さない（CSP の connect-src は 'self' だけ）。現在地は端末の中だけで使う。
+- 道順の重み（src/route.js の W）を変えたら qa/run.mjs の「ただの近道より危ない所を多く通らない」が通るか見る。区域は想定であること・出典を道順の画面に出し続ける。
 - 避難場所の一次資料は国土地理院「指定緊急避難場所・指定避難所データ」（川越市 11201）と川越市の一覧。取り直したら tools/build-data.py の日付も直す。利用上の注意（最新は市に確認・災害種別ごとの指定・第三者に正しく伝える）を画面に出し続ける。
 - 日本語以外は AI の訳で人の確認がまだ。確認したら「このページについて」の注意を外す。
 - 決まった場所（SPOTS）の座標は国土地理院の住所検索で求めたもの。足すときも同じやり方で。

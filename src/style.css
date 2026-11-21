@@ -47,3 +47,16 @@ nav .share-tab{border-color:var(--acc)}
 .count{text-align:center;font-weight:bold;color:var(--ok)}
 .recv{background:var(--card);border-radius:10px;padding:8px 12px}
 .nojs{max-width:720px;margin:0 auto;padding:0 16px}
+/* 道順 */
+.rw{font-weight:bold;color:var(--acc)}.rw:empty{display:none}
+.rbtn{align-self:flex-start;margin:4px 0}
+#route:empty{display:none}
+#route{border:2px solid var(--acc);border-radius:12px;padding:10px;margin:10px 0;background:var(--card);scroll-margin-top:64px}
+#route h2{margin-top:0}
+.rmap{margin:8px auto;max-width:420px}.rmap svg{width:100%;height:auto;border-radius:8px}
+.rmap figcaption{color:var(--mut);font-size:.8rem;text-align:center}
+.rbg{fill:#fff}.rd{fill:none;stroke:#bbb;stroke-width:1.2;stroke-linecap:round}.rh{fill:none;stroke:#4fa3e0;stroke-width:3;stroke-linecap:round;opacity:.8}
+.rt{fill:none;stroke:#b3261e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.goal{fill:#b3261e;stroke:#fff;stroke-width:2}
+.rmap .north{fill:#b3261e}.rmap .me{fill:#111;stroke:#fff;stroke-width:2}
+.rsteps li{margin:.35em 0}

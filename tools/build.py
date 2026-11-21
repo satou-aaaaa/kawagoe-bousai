@@ -34,7 +34,7 @@ noscript = f"""<noscript><div class="nojs">
 
 s = (R / "src/index.src.html").read_text(encoding="utf-8")
 for mark, body in [("/*STYLE*/", (R / "src/style.css").read_text(encoding="utf-8")), ("/*PLACES*/", (R / "data/places.js").read_text(encoding="utf-8")),
-                   ("/*QR*/", qr_js), ("/*I18N*/", (R / "src/i18n.js").read_text(encoding="utf-8")), ("/*APP*/", (R / "src/app.js").read_text(encoding="utf-8")),
+                   ("/*QR*/", qr_js), ("/*I18N*/", (R / "src/i18n.js").read_text(encoding="utf-8")), ("/*ROUTE*/", (R / "src/route.js").read_text(encoding="utf-8")), ("/*APP*/", (R / "src/app.js").read_text(encoding="utf-8")),
                    ("<!--NOSCRIPT-->", noscript)]:
     assert mark in s, mark
     assert "</script" not in body.lower() or mark == "<!--NOSCRIPT-->", mark

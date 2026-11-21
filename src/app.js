@@ -15,6 +15,7 @@
     here: null, // { lat, lon, label }
     heading: null,
     tab: "near",
+    route: null, // 道順を出している一覧の番号
   };
   const t = (k) => (T[st.lang] && T[st.lang][k] !== undefined ? T[st.lang][k] : T.ja[k]);
   const fmt = (s, o) => String(s).replace(/\{(\w+)\}/g, (_, k) => o[k]);
@@ -69,8 +70,9 @@
         if (st.hz === "flood" && p.f) tags.push(`<span class="tag up">${esc(fmt(t("floorUp"), { n: p.f }))}</span>`);
         if (p.s) tags.push(`<span class="tag">${esc(t("shelterMark"))}</span>`);
         const map = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
-        return `<li><span class="no">${i + 1}</span>${arrow(x.b)}<div class="pl"><b>${esc(p.n)}</b><span class="dd">${esc(dirName(x.b))} ${esc(dist(x.d))}</span><span class="ad">${esc(p.a)}</span>${tags.join("")}${p.note ? `<span class="nt">${esc(p.note)}</span>` : ""}<a href="${map}" target="_blank" rel="noopener">${esc(t("openMap"))}</a></div></li>`;
+        return `<li><span class="no">${i + 1}</span>${arrow(x.b)}<div class="pl"><b>${esc(p.n)}</b><span class="dd">${esc(dirName(x.b))} ${esc(dist(x.d))}</span><span class="ad">${esc(p.a)}</span>${tags.join("")}${p.note ? `<span class="nt">${esc(p.note)}</span>` : ""}<span class="rw" data-rw="${i}"></span><button type="button" class="sub rbtn" data-route="${i}" aria-pressed="${st.route === i}">🚶 ${esc(t("routeBtn"))}</button><a href="${map}" target="_blank" rel="noopener">${esc(t("openMap"))}</a></div></li>`;
       }).join("") + `</ol>`;
+      body += `<section id="route" aria-live="polite"></section>`;
       body += miniMap(list);
       body += `<p><button type="button" class="sub" id="compass">${esc(t("compass"))}</button> <span class="hint" id="compass-msg"></span></p>`;
     }
@@ -124,6 +126,41 @@
     v.innerHTML = st.tab === "near" ? nearHTML() : st.tab === "do" ? doHTML() : st.tab === "talk" ? talkHTML() : st.tab === "share" ? shareHTML() : infoHTML();
     v.setAttribute("aria-labelledby", "tab-" + st.tab);
     status();
+    if (st.tab === "near" && st.here) fillRoutes();
+    if (st.tab === "share") ROUTE.load().catch(() => {}); // 渡すファイルに道のデータも入れるので、先に読んでおく（押してから待たせない）
+  }
+
+  // 道順（src/route.js）。道のデータは大きいので、場所が決まってから読む
+  let rc = { key: "", res: null };
+  const walk = (m) => fmt(t("routeWalk"), { d: dist(m), min: Math.max(1, Math.ceil(m / 60)) }); // 災害のときは分速60mで見る
+  function fillRoutes() {
+    const list = nearest(5), key = [st.here.lat, st.here.lon, st.hz].join();
+    const box = $("#route");
+    if (st.route != null && box && !ROUTE.ready()) box.innerHTML = `<p class="hint">${esc(t("routeLoading"))}</p>`;
+    ROUTE.load().then(() => {
+      if (rc.key !== key) rc = { key, res: ROUTE.routes(st.here, list.map((x) => x.p), st.hz === "fire" ? "fire" : st.hz) };
+      if (!$("#route")) return;
+      rc.res.forEach((r, i) => { const el = document.querySelector(`[data-rw="${i}"]`); if (el && r) el.textContent = walk(r.len); });
+      if (st.route != null) $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]);
+    }, () => {
+      const b = $("#route");
+      if (b && st.route != null) b.innerHTML = `<p class="warn">${esc(t("routeNone"))}</p>`;
+    });
+  }
+  function routeHTML(x, r) {
+    if (!x || !r) return `<p class="warn">${esc(t("routeNone"))}</p>`;
+    const hz = st.hz === "fire" ? "fire" : st.hz, w = ROUTE.W[hz];
+    const avoid = ROUTE.BITS.filter(([b]) => (w[b] || 1) >= 2), still = avoid.filter(([b]) => r.by[b] > 0);
+    const name = (k) => t(k);
+    const turn = (s) => s.turn === "end" ? fmt(t("stepEnd"), { d: dist(s.d) }) : fmt(t("stepTurn"), { d: dist(s.d), turn: t(s.turn === "R" ? "turnR" : "turnL") });
+    let h = `<h2>${esc(fmt(t("routeT"), { name: x.p.n }))}</h2><p class="dd">${esc(walk(r.len))}</p>`;
+    if (r.startGap > 300) h += `<p class="warn">${esc(fmt(t("routeFar"), { d: dist(r.startGap) }))}</p>`;
+    h += `<figure class="rmap">${ROUTE.svg(r, hz, esc(t("routeMapNote")))}<figcaption>${esc(t("routeMapNote"))}</figcaption></figure>`;
+    h += `<p class="hint">${esc(fmt(t("routeAvoid"), { list: avoid.map(([, k]) => name(k)).join("・") }))}</p>`;
+    if (still.length) h += `<p class="warn" id="route-still">${esc(fmt(t("routeStill"), { list: still.map(([b, k]) => name(k) + " " + dist(r.by[b])).join("・") }))}</p>`;
+    h += `<ol class="rsteps">${ROUTE.steps(r).map((s) => `<li>${esc(turn(s))}</li>`).join("")}</ol>`;
+    h += `<p class="warn">${esc(t("routeNote"))}</p><p class="hint">${esc(t("routeSrc"))}</p>`;
+    return h;
   }
   function status() {
     const el = $("#status");
@@ -138,7 +175,7 @@
     if (!navigator.geolocation) { s.textContent = t("gpsFail"); return; }
     s.textContent = t("gpsWait");
     navigator.geolocation.getCurrentPosition(
-      (pos) => { st.here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; render(); },
+      (pos) => { st.here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; st.route = null; render(); },
       () => { $("#gps-state").textContent = t("gpsFail"); },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 },
     );
@@ -157,9 +194,17 @@
     else start();
   }
   // ファイルで渡す。共有の画面（AirDrop・クイック共有）を開き、使えない端末ではファイルを保存する
+  const ROADS_MARK = 'id="roads' + '-data"'; // 本文にこの文字をそのまま書かない（app.js 自身が入った写しで見まちがえないように）
+  async function fileSource() {
+    if (SOURCE.includes("<script " + ROADS_MARK)) return SOURCE;
+    try { await ROUTE.load(); } catch (e) { return SOURCE; }
+    const data = "<script " + ROADS_MARK + ">window.ROADS = " + JSON.stringify(window.ROADS) + ";</" + "script>\n";
+    const at = SOURCE.lastIndexOf("</body>");
+    return SOURCE.slice(0, at) + data + SOURCE.slice(at);
+  }
   async function giveFile() {
     const msg = $("#give-msg");
-    const file = new File([SOURCE], "kawagoe-bousai.html", { type: "text/html" });
+    const file = new File([await fileSource()], "kawagoe-bousai.html", { type: "text/html" });
     const counted = () => { LS("kb-shared", String(Number(LS("kb-shared") || 0) + 1)); };
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try { await navigator.share({ files: [file], title: t("title") }); counted(); render(); return; }
@@ -174,12 +219,14 @@
     msg.textContent = t("shareFileSaved");
   }
   window.KB.source = () => SOURCE; // 検査用
+  window.KB.fileSource = fileSource;
 
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
     if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
-    if (b.dataset.spot) { const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
+    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.spot) { st.route = null; const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
     if (b.id === "gps") return useGps();
     if (b.id === "compass") return compass();
     if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }

@@ -41,12 +41,21 @@ check("決まった場所：5つ以上・全部の言語の名前がある", SPO
 {
   // index.html が src と data から作ったものか（tools/build.py。QR は Python で作るので、中身が入っているかを見る）
   const idx = read("index.html");
-  const stale = ["src/style.css", "data/places.js", "src/i18n.js", "src/app.js"].filter((f) => !idx.includes(read(f).replace(/\n+$/, "")));
+  const stale = ["src/style.css", "data/places.js", "src/i18n.js", "src/route.js", "src/app.js"].filter((f) => !idx.includes(read(f).replace(/\n+$/, "")));
   check("index.html が src/ と同じ（直したら python3 tools/build.py）", stale.length === 0, stale.join(" "));
   const kb = Buffer.byteLength(read("index.html")) / 1024;
   check("index.html が軽い（混んだ回線でも開けるよう 150KB 未満）", kb < 150, kb.toFixed(1) + "KB");
   check("index.html は外のサイトから何も読み込まない（電波なしで全部そろう）", !/<(script|link|img)[^>]+(src|href)="https?:/i.test(read("index.html")));
   check("index.html の最初の行が <!doctype html>（標準モード）", read("index.html").startsWith("<!doctype html>"));
+}
+{
+  // 道のデータ（tools/build-roads.py）。保存とファイルで渡すときに重すぎないか・出典と日付があるか
+  const rj = read("data/roads.js"), mb = Buffer.byteLength(rj) / 1048576;
+  const box = {}; vm.runInNewContext(rj, { window: box });
+  const R = box.ROADS;
+  check("道のデータ：2.5MB 未満・交差点と道の数・出典と作った日がある", mb < 2.5 && R.meta.nodes === R.n.length / 2 && R.meta.edges === R.e.length && /国土地理院/.test(R.meta.roads) && /国土数値情報/.test(R.meta.flood) && /^\d{4}-\d\d-\d\d$/.test(R.meta.made), mb.toFixed(2) + "MB");
+  check("道のデータ：道の両はしが本当にある交差点・長さが正", R.e.every((e) => e[0] >= 0 && e[1] >= 0 && e[0] < R.meta.nodes && e[1] < R.meta.nodes && e[2] > 0 && e.length % 2 === 0));
+  check("PWA：道のデータも保存する（電波なしで道順）", /"\.\/data\/roads\.js"/.test(read("sw.js")));
 }
 {
   const sw = read("sw.js");
@@ -112,6 +121,43 @@ try {
   const gpsNames = await page.locator(".places li b").allTextContents();
   check("現在地：時の鐘の位置で、場所を選んだときと同じ答え", gpsNames.join() === names.join(), gpsNames.join("・"));
 
+  // 道順：危ない所を避けた道（src/route.js・data/roads.js）
+  await page.click("[data-spot=kawagoe]");
+  await page.click("[data-hz=flood]");
+  await page.waitForFunction(() => (document.querySelector('[data-rw="0"]') || {}).textContent, null, { timeout: 20000 });
+  check("道順：一覧のどの場所にも歩く距離と時間が出る", (await page.locator(".rw").allTextContents()).every((x) => /歩いて約.+分/.test(x)) && (await page.locator(".rw").count()) === 5);
+  await page.click('[data-route="0"]');
+  await page.waitForSelector("#route svg .rt");
+  check("道順：押すと上が北の道の地図・曲がる所の案内・想定である注意が出る", (await page.locator("#route .rsteps li").count()) >= 1 && /着きます/.test(await page.locator("#route .rsteps").innerText()) && /想定/.test(await page.locator("#route").innerText()));
+  {
+    // 町じゅうの20組で、災害ごとの道が「ただの近道」より危ない所を多く通らないか・遠回りしすぎないか
+    const res = await page.evaluate(() => {
+      let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      const pick = () => PLACES[Math.floor(rnd() * PLACES.length)];
+      const bad = { flood: [2, 16, 64, 128], quake: [8, 256], fire: [8] };
+      const out = { worse: [], helped: 0, detour: 0, n: 0 };
+      for (let i = 0; i < 20; i++) {
+        const a = pick(), b = pick(); if (a === b) continue;
+        const base = ROUTE.routes(a, [b], "none")[0];
+        for (const hz of ["flood", "quake", "fire"]) {
+          const r = ROUTE.routes(a, [b], hz)[0]; out.n++;
+          const m = (x) => bad[hz].reduce((s, k) => s + (x.by[k] || 0), 0);
+          if (m(r) > m(base) + 1) out.worse.push(`${hz} ${a.n}→${b.n} ${m(r)}>${m(base)}`);
+          if (m(base) > 0 && m(r) < m(base)) out.helped++;
+          out.detour = Math.max(out.detour, r.len / base.len);
+        }
+      }
+      return out;
+    });
+    check("道順：どの組でも、ただの近道より危ない所（浸水・家屋倒壊・川沿い・地下道・細い道・土砂）を多く通らない", res.worse.length === 0 && res.n >= 30, res.worse.join(" | "));
+    check("道順：危ない所を実際に避けている組がある・遠回りは近道の2.5倍まで", res.helped >= 3 && res.detour <= 2.5, JSON.stringify({ helped: res.helped, detour: res.detour }));
+  }
+  {
+    const r = await page.evaluate(() => { const x = ROUTE.routes({ lat: 35.906883, lon: 139.483643 }, [PLACES[0]], "quake")[0]; let sum = 0; for (let i = 1; i < x.pts.length; i++) sum += KB.geo({ lat: x.pts[i - 1][0], lon: x.pts[i - 1][1] }, { lat: x.pts[i][0], lon: x.pts[i][1] }).d; return { sum, len: x.len - x.startGap - x.endGap, n: x.pts.length }; });
+    check("道順：描く線の長さが道の長さと合う（道の形を正しく読めている）", r.n > 2 && Math.abs(r.sum - r.len) / r.len < 0.05, JSON.stringify(r));
+  }
+  await page.click("[data-hz=quake]");
+
   // 5言語
   for (const [c] of LANGS) {
     for (const tab of ["near", "do", "talk", "info", "share"]) {
@@ -174,12 +220,16 @@ try {
     await fp.waitForFunction(() => document.querySelector("#tab-near").textContent.length > 0);
     await fp.click("[data-spot=kawagoe]");
     check("受け取ったファイル：開くとアプリが動き、避難場所が出る", (await fp.locator(".places li").count()) === 5 && ferr.length === 0, ferr.join(" | "));
+    await fp.click('[data-route="0"]');
+    await fp.waitForSelector("#route svg .rt", { timeout: 15000 });
+    check("受け取ったファイル：電波もサーバーも無しで道順が出る（道のデータもファイルに入っている）", (await fp.locator("#route .rsteps li").count()) >= 1);
     check("受け取ったファイル：ファイルから開いていることを知らせる", /ファイルから開いています/.test(await fp.locator("#status").textContent()));
     await fp.click("#tab-share");
     const [dl2] = await Promise.all([fp.waitForEvent("download"), fp.click("#givefile")]);
     const again = path.join(root, "qa-report", "again.html");
     await dl2.saveAs(again);
-    check("受け取ったファイル：そこからまた別の人へ渡せる（同じ中身）", readFileSync(again, "utf8").length > 50000 && readFileSync(again, "utf8").includes("window.PLACES"));
+    const a2 = readFileSync(again, "utf8"), a1 = readFileSync(filePath, "utf8");
+    check("受け取ったファイル：そこからまた別の人へ渡せる（同じ中身・道のデータは1つだけ）", a2.length > 50000 && a2.includes("window.PLACES") && (a2.match(/<script id="roads-data">/g) || []).length === 1 && Math.abs(a2.length - a1.length) < 5000, `${a1.length} ${a2.length}`);
     await fp.close();
     const nj = await browser.newContext({ javaScriptEnabled: false });
     const np = await nj.newPage();
@@ -204,6 +254,9 @@ try {
   await page.click("#gps");
   await page.waitForFunction(() => /現在地から近い順/.test((document.querySelector("#gps-msg") || {}).textContent || ""));
   check("電波なし：現在地も使える", (await page.locator(".places li").count()) === 5);
+  await page.click('[data-route="1"]');
+  await page.waitForSelector("#route svg .rt", { timeout: 15000 });
+  check("電波なし：道順も出る（道のデータを保存している）", (await page.locator("#route .rsteps li").count()) >= 1);
   const pp = await context.newPage();
   await pp.goto(base + "print.html");
   check("電波なし：掲示用ポスターのページも開ける・場所ごとに地図とアプリの QR がある", (await pp.locator(".poster").count()) === SPOTS.length && (await pp.locator(".poster .map svg").count()) === SPOTS.length && (await pp.locator(".poster .qr svg").count()) === SPOTS.length);
