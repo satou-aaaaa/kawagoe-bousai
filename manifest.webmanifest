@@ -1,0 +1,15 @@
+{
+  "name": "川越 避難ガイド / Kawagoe Evacuation Guide",
+  "short_name": "川越避難",
+  "description": "川越市の避難場所の方角と距離。電波がなくても使えます。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b3261e",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
