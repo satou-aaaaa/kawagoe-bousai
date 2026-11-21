@@ -1,6 +1,9 @@
 // 川越 避難ガイドの動き。外へは何も送らない（現在地もこの端末の中だけで使う）。
 (function () {
   "use strict";
+  // 人に渡すファイルの中身。描く前の形を、動き出したときに写しておく（電波もサーバーも無しで渡せるように）
+  const SOURCE = "<!doctype html>\n" + document.documentElement.outerHTML;
+  const FILE_MODE = location.protocol === "file:";
   const $ = (s, r = document) => r.querySelector(s);
   const LS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
   const codes = LANGS.map((l) => l[0]);
@@ -86,7 +89,7 @@
     return `<h2>${esc(t("callT"))}</h2><ul class="calls"><li><a href="tel:119">${esc(t("call119"))}</a></li><li><a href="tel:110">${esc(t("call110"))}</a></li><li><a href="tel:171">${esc(t("call171"))}</a></li></ul>
       <h2>${esc(t("wifiT"))}</h2><p>${esc(t("wifi"))}</p>
       <h2>${esc(t("keepT"))}</h2><p>${esc(ios ? t("keepIos") : t("keepAndroid"))}</p><p class="hint">${esc(ios ? t("keepAndroid") : t("keepIos"))}</p>
-      <h2>${esc(t("shareT"))}</h2><p class="row"><button type="button" class="sub" id="share">${esc(t("share"))}</button><button type="button" class="sub" id="savefile">${esc(t("saveFile"))}</button></p><p><a href="./print.html">${esc(t("qrSheet"))}</a></p>
+      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html">${esc(t("qrSheet"))}</a></p>
       <h2>${esc(t("linksT"))}</h2><ul class="links">
         <li><a href="https://www.city.kawagoe.saitama.jp/kurashi/anshin/1001545/1001581/1001583.html" target="_blank" rel="noopener">${esc(t("lnCity"))}</a></li>
         <li><a href="https://www.city.kawagoe.saitama.jp/shisei/shisetsu/hinanjyo/1013361.html" target="_blank" rel="noopener">${esc(t("lnHinan"))}</a></li>
@@ -96,6 +99,17 @@
       <p class="hint">${esc(fmt(t("dataDate"), PLACES_META))}</p>`;
   }
 
+  function shareHTML() {
+    const n = Number(LS("kb-shared") || 0);
+    return `<p>${esc(t("shareLead"))}</p>
+      <h2>${esc(t("shareOnlineT"))}</h2><p>${esc(t("shareOnline"))}</p>
+      <div class="qrbox" id="qr">${APP_QR[st.lang] || APP_QR.ja}</div><p class="url">${esc(APP_URL + (st.lang === "ja" ? "" : "?lang=" + st.lang))}</p>
+      <h2>${esc(t("shareOfflineT"))}</h2><p>${esc(t("shareOffline"))}</p>
+      <button type="button" class="main" id="givefile">📲 ${esc(t("shareFileBtn"))}</button><p class="hint" id="give-msg" aria-live="polite"></p>
+      ${n ? `<p class="count" id="give-count">${esc(fmt(t("shareCount"), { n }))}</p>` : ""}
+      <h2>${esc(t("recvT"))}</h2><div class="recv"><p>${esc(t("recvIos"))}</p><p>${esc(t("recvAndroid"))}</p><p class="hint">${esc(t("recvNoJs"))}</p></div>`;
+  }
+
   function render() {
     document.documentElement.lang = st.lang === "easy" ? "ja" : st.lang === "zh" ? "zh-Hans" : st.lang;
     document.title = t("title");
@@ -103,15 +117,18 @@
     $("#sub").textContent = t("sub");
     $("#lang-label").textContent = t("lang");
     $("#lang").value = st.lang;
-    for (const b of document.querySelectorAll("[data-tab]")) { b.textContent = t("tab" + b.dataset.tab[0].toUpperCase() + b.dataset.tab.slice(1)); b.setAttribute("aria-selected", String(b.dataset.tab === st.tab)); }
+    for (const b of document.querySelectorAll("nav [data-tab]")) { b.textContent = t("tab" + b.dataset.tab[0].toUpperCase() + b.dataset.tab.slice(1)); b.setAttribute("aria-selected", String(b.dataset.tab === st.tab)); }
     const v = $("#view");
-    v.innerHTML = st.tab === "near" ? nearHTML() : st.tab === "do" ? doHTML() : st.tab === "talk" ? talkHTML() : infoHTML();
+    $("#give").textContent = t("give");
+    $("#give").hidden = st.tab === "share";
+    v.innerHTML = st.tab === "near" ? nearHTML() : st.tab === "do" ? doHTML() : st.tab === "talk" ? talkHTML() : st.tab === "share" ? shareHTML() : infoHTML();
     v.setAttribute("aria-labelledby", "tab-" + st.tab);
     status();
   }
   function status() {
     const el = $("#status");
     const saved = LS("kb-saved") === "1";
+    if (FILE_MODE) { el.className = "status ok"; el.textContent = t("fileMode"); return; }
     el.className = "status " + (navigator.onLine ? (saved ? "ok" : "warn") : "off");
     el.textContent = navigator.onLine ? (saved ? t("saved") : t("notSaved")) : t("offline");
   }
@@ -139,25 +156,34 @@
     if (typeof DeviceOrientationEvent.requestPermission === "function") DeviceOrientationEvent.requestPermission().then((r) => (r === "granted" ? start() : (msg.textContent = t("compassNo"))), () => (msg.textContent = t("compassNo")));
     else start();
   }
-  async function saveFile() {
-    try {
-      const html = await (await fetch("./index.html")).text();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-      a.download = "kawagoe-bousai.html";
-      document.body.appendChild(a); a.click(); a.remove();
-    } catch (e) { /* 保存できない端末では何もしない */ }
+  // ファイルで渡す。共有の画面（AirDrop・クイック共有）を開き、使えない端末ではファイルを保存する
+  async function giveFile() {
+    const msg = $("#give-msg");
+    const file = new File([SOURCE], "kawagoe-bousai.html", { type: "text/html" });
+    const counted = () => { LS("kb-shared", String(Number(LS("kb-shared") || 0) + 1)); };
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: t("title") }); counted(); render(); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    counted();
+    msg.textContent = t("shareFileSaved");
   }
+  window.KB.source = () => SOURCE; // 検査用
 
   document.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
-    if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus(); return; }
+    if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
     if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
     if (b.dataset.spot) { const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
     if (b.id === "gps") return useGps();
     if (b.id === "compass") return compass();
-    if (b.id === "share") { if (navigator.share) navigator.share({ title: t("title"), url: location.href.split("?")[0] }).catch(() => {}); return; }
-    if (b.id === "savefile") return saveFile();
+    if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
+    if (b.id === "givefile") return giveFile();
   });
   $("#lang").addEventListener("change", (e) => { st.lang = e.target.value; LS("kb-lang", st.lang); if (st.here && st.here.id) { const s = SPOTS.find((x) => x.id === st.here.id); st.here.label = s.name[st.lang] || s.name.en; } render(); });
   window.addEventListener("online", status);

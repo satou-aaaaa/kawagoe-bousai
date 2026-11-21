@@ -6,14 +6,14 @@
 
 ```bash
 bash scripts/setup.sh                       # 検査の道具（Playwright）
-pip install qrcode==8.2    # print.html を作り直すときだけ
+pip install qrcode==8.2    # index.html・print.html を作り直すとき（QR を作る）
 ```
 
 ## 作り方（index.html・print.html は自動で作るファイル。手で直さない）
 
 ```bash
 python3 tools/build-data.py    # data/*.csv・city-list.json → data/places.js（データを取り直したとき）
-python3 tools/build.py         # src/ + data/places.js → index.html（1つのファイルにまとめる。人に渡せるように）
+python3 tools/build.py         # src/ + data/places.js → index.html（1つのファイルにまとめる。「みんなに配る」でそのまま人に渡すため。<noscript> の簡易表示も作る）
 python3 tools/build-print.py   # print.html（場所ごとの掲示用ポスター）
 ```
 

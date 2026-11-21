@@ -39,11 +39,10 @@ check("決まった場所：5つ以上・全部の言語の名前がある", SPO
   check("言葉：5言語で同じキー・同じ数・同じ差し込み", miss.length === 0, miss.join(" "));
 }
 {
-  // index.html が src と data から作ったものと同じか（tools/build.py と同じ組み立て）
-  let s = read("src/index.src.html");
-  for (const [mark, f] of [["/*STYLE*/", "src/style.css"], ["/*PLACES*/", "data/places.js"], ["/*I18N*/", "src/i18n.js"], ["/*APP*/", "src/app.js"]]) s = s.replace(mark, read(f).replace(/\n+$/, ""));
-  s = s.replace("<!doctype html>\n", "<!doctype html>\n<!-- 自動で作るファイル（tools/build.py）。直すのは src/ -->\n");
-  check("index.html が src/ と同じ（直したら python3 tools/build.py）", s === read("index.html"));
+  // index.html が src と data から作ったものか（tools/build.py。QR は Python で作るので、中身が入っているかを見る）
+  const idx = read("index.html");
+  const stale = ["src/style.css", "data/places.js", "src/i18n.js", "src/app.js"].filter((f) => !idx.includes(read(f).replace(/\n+$/, "")));
+  check("index.html が src/ と同じ（直したら python3 tools/build.py）", stale.length === 0, stale.join(" "));
   const kb = Buffer.byteLength(read("index.html")) / 1024;
   check("index.html が軽い（混んだ回線でも開けるよう 150KB 未満）", kb < 150, kb.toFixed(1) + "KB");
   check("index.html は外のサイトから何も読み込まない（電波なしで全部そろう）", !/<(script|link|img)[^>]+(src|href)="https?:/i.test(read("index.html")));
@@ -77,7 +76,7 @@ try {
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto(base);
   await page.waitForFunction(() => document.querySelector("#tab-near").textContent.length > 0);
-  check("開く：日本語で、4つのタブがある", (await page.locator("[role=tab]").count()) === 4 && (await page.title()) === "川越 避難ガイド");
+  check("開く：日本語で、5つのタブがある", (await page.locator("[role=tab]").count()) === 5 && (await page.title()) === "川越 避難ガイド");
 
   // 場所を選ぶ → 近い順に5つ・紙の QR の文と同じ答え
   await page.click("[data-spot=tokinokane]");
@@ -115,14 +114,14 @@ try {
 
   // 5言語
   for (const [c] of LANGS) {
-    for (const tab of ["near", "do", "talk", "info"]) {
+    for (const tab of ["near", "do", "talk", "info", "share"]) {
       await page.selectOption("#lang", c);
       await page.click(`#tab-${tab}`);
       const txt = await page.locator("body").innerText();
       if (/undefined|NaN|\{n\}|\{gsi\}|null/.test(txt)) { check(`言葉：${c} の ${tab} に変な文字がない`, false, txt.slice(0, 200)); }
     }
   }
-  check("言葉：5言語 × 4タブで undefined などが出ない", !results.some((r) => r.name.startsWith("言葉：") && r.name.includes("変な文字") && !r.ok));
+  check("言葉：5言語 × 5タブで undefined などが出ない", !results.some((r) => r.name.startsWith("言葉：") && r.name.includes("変な文字") && !r.ok));
   await page.selectOption("#lang", "en");
   await page.click("#tab-near");
   check("言葉：英語に切り替えると見出しも英語・html の lang も en", (await page.locator("#title").textContent()) === "Kawagoe Evacuation Guide" && (await page.evaluate(() => document.documentElement.lang)) === "en");
@@ -140,7 +139,7 @@ try {
   await page.selectOption("#lang", "ja");
 
   // スマホ幅：横にはみ出さない
-  for (const tab of ["near", "do", "talk", "info"]) {
+  for (const tab of ["near", "do", "talk", "info", "share"]) {
     await page.click(`#tab-${tab}`);
     if (tab === "near") await page.click("[data-spot=tokinokane]");
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -150,6 +149,44 @@ try {
   {
     const small = await page.locator("button:visible").evaluateAll((els) => els.filter((e) => Math.round(e.getBoundingClientRect().height) < 44).map((e) => e.textContent));
     check("押す所が44px以上（手袋や慌てた指でも押せる）", small.length === 0, small.join("・"));
+  }
+
+  // みんなに配る：上のボタン → 配る画面・QR・ファイルで渡す
+  await page.selectOption("#lang", "ja");
+  await page.click("#tab-near");
+  await page.click("#give");
+  check("配る：上の大きなボタンで配る画面が開く", (await page.locator("#tab-share").getAttribute("aria-selected")) === "true" && (await page.locator("#qr svg").count()) === 1);
+  await page.selectOption("#lang", "en");
+  check("配る：QR とアドレスが選んだ言語のもの", /\?lang=en$/.test(await page.locator(".url").textContent()));
+  await page.selectOption("#lang", "ja");
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click("#givefile")]);
+  const filePath = path.join(root, "qa-report", "kawagoe-bousai.html");
+  mkdirSync(path.join(root, "qa-report"), { recursive: true });
+  await dl.saveAs(filePath);
+  check("配る：共有の画面が無い端末ではファイルを保存し、そう知らせる", dl.suggestedFilename() === "kawagoe-bousai.html" && /ファイルを保存しました/.test(await page.locator("#give-msg").textContent()));
+  await page.click("#tab-near"); await page.click("#tab-share");
+  check("配る：配った回数を数える", /1 回/.test(await page.locator("#give-count").textContent()));
+  {
+    const fp = await context.newPage();
+    const ferr = [];
+    fp.on("pageerror", (e) => ferr.push(e.message));
+    await fp.goto("file://" + filePath);
+    await fp.waitForFunction(() => document.querySelector("#tab-near").textContent.length > 0);
+    await fp.click("[data-spot=kawagoe]");
+    check("受け取ったファイル：開くとアプリが動き、避難場所が出る", (await fp.locator(".places li").count()) === 5 && ferr.length === 0, ferr.join(" | "));
+    check("受け取ったファイル：ファイルから開いていることを知らせる", /ファイルから開いています/.test(await fp.locator("#status").textContent()));
+    await fp.click("#tab-share");
+    const [dl2] = await Promise.all([fp.waitForEvent("download"), fp.click("#givefile")]);
+    const again = path.join(root, "qa-report", "again.html");
+    await dl2.saveAs(again);
+    check("受け取ったファイル：そこからまた別の人へ渡せる（同じ中身）", readFileSync(again, "utf8").length > 50000 && readFileSync(again, "utf8").includes("window.PLACES"));
+    await fp.close();
+    const nj = await browser.newContext({ javaScriptEnabled: false });
+    const np = await nj.newPage();
+    await np.goto("file://" + filePath);
+    const t = await np.locator(".nojs").innerText();
+    check("スクリプトが動かない開き方：避難場所の一覧と119・171が読める", /119/.test(t) && /171/.test(t) && (t.match(/地震 Earthquake/g) || []).length >= PLACES.length, t.slice(0, 120));
+    await nj.close();
   }
 
   // 電波なし：保存されたあと、オフラインで開き直しても全部出る
