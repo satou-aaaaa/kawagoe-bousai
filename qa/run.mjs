@@ -1,5 +1,5 @@
 // 川越 避難ガイドの検査。データ（座標が川越の中・災害の種類）・言葉のそろい・index.html が src と同じか・
-// 画面（5言語・場所を選ぶ・現在地・洪水の階・火事の案内）・紙の QR と画面の答えが同じか・電波なしで開けるか・スマホ幅・PWA の返事の仕方を見る。
+// 画面（5言語・場所を選ぶ・現在地・洪水の階・火事の案内）・掲示用ポスターと画面の答えが同じか・電波なしで開けるか・スマホ幅・PWA の返事の仕方を見る。
 // 使い方: node qa/run.mjs   失敗があれば終了コード 1。結果は qa-report/report.md。
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
@@ -84,9 +84,10 @@ try {
   const names = await page.locator(".places li b").allTextContents();
   check("場所を選ぶ：近い避難場所が5つ出る・方角と距離がある", names.length === 5 && (await page.locator(".places .dd").first().textContent()).match(/\d+m|km/), names.join("・"));
   const print = read("print.html");
-  const card = /<section class="card" data-spot="tokinokane">.*?<pre class="tx">(.*?)<\/pre>/s.exec(print)[1];
-  const paperQuake = [...card.split("【大雨")[0].matchAll(/^\d (\S+) /gm)].map((m) => m[1]);
-  check("紙の QR：地震の近い順が画面と同じ（一番街）", paperQuake.join() === names.slice(0, 3).join(), paperQuake.join() + " / " + names.slice(0, 3).join());
+  const card = /<section class="poster" data-spot="tokinokane">(.*?)<\/section>/s.exec(print)[1];
+  const paper = (cls) => [...(new RegExp(`<ol class="${cls}">(.*?)</ol>`, "s").exec(card)[1]).matchAll(/<b class="nm">([^<]+)<\/b>/g)].map((m) => m[1]);
+  const paperQuake = paper("lq");
+  check("掲示用ポスター：地震の近い順が画面と同じ（一番街）", paperQuake.join() === names.slice(0, 3).join(), paperQuake.join() + " / " + names.slice(0, 3).join());
   check("小さな地図：番号の点が5つ・北の印がある", (await page.locator(".mini .dot").count()) === 5 && (await page.locator(".mini .north").count()) === 1);
 
   // 洪水：洪水で使える場所だけ・階の注記
@@ -94,8 +95,8 @@ try {
   const fnames = await page.locator(".places li b").allTextContents();
   const floodOk = fnames.every((n) => PLACES.find((p) => p.n === n).h.some((h) => h === "flood" || h === "inland"));
   check("大雨・洪水：洪水か内水で指定された場所だけ出る・川に近づかない注意がある", floodOk && (await page.locator(".warn").count()) >= 1, fnames.join("・"));
-  const paperFlood = [...card.split("【大雨")[1].matchAll(/^\d (\S+)/gm)].map((m) => m[1]);
-  check("紙の QR：洪水の近い順が画面と同じ（一番街）", paperFlood.join() === fnames.slice(0, 3).join(), paperFlood.join() + " / " + fnames.slice(0, 3).join());
+  const paperFlood = paper("lf");
+  check("掲示用ポスター：洪水の近い順が画面と同じ（一番街）", paperFlood.join() === fnames.slice(0, 3).join(), paperFlood.join() + " / " + fnames.slice(0, 3).join());
   {
     await page.click("[data-spot=kawagoe]");
     const withFloor = PLACES.filter((p) => p.f).map((p) => p.n);
@@ -168,7 +169,7 @@ try {
   check("電波なし：現在地も使える", (await page.locator(".places li").count()) === 5);
   const pp = await context.newPage();
   await pp.goto(base + "print.html");
-  check("電波なし：印刷用の QR のページも開ける", (await pp.locator(".card .qr svg").count()) >= 5);
+  check("電波なし：掲示用ポスターのページも開ける・場所ごとに地図とアプリの QR がある", (await pp.locator(".poster").count()) === SPOTS.length && (await pp.locator(".poster .map svg").count()) === SPOTS.length && (await pp.locator(".poster .qr svg").count()) === SPOTS.length);
   await context.setOffline(false);
   check("エラーが出ない", errors.length === 0, errors.join(" | "));
 } finally {

@@ -1,12 +1,12 @@
 # AGENTS.md
 
-川越市限定の防災ページ（PWA）。インストール不要・5言語・一度開けば電波なしで使える。場所ごとの「文字だけQR」（print.html）も作る。GitHub Pages で公開（main の /）。
+川越市限定の防災ページ（PWA）。インストール不要・5言語・一度開けば電波なしで使える。場所ごとの掲示用ポスター（print.html、A4）も作る。GitHub Pages で公開（main の /）。
 
 ## 準備（最初に一度）
 
 ```bash
 bash scripts/setup.sh                       # 検査の道具（Playwright）
-pip install qrcode==8.2 zxing-cpp pillow    # print.html を作り直すときだけ
+pip install qrcode==8.2    # print.html を作り直すときだけ
 ```
 
 ## 作り方（index.html・print.html は自動で作るファイル。手で直さない）
@@ -14,8 +14,7 @@ pip install qrcode==8.2 zxing-cpp pillow    # print.html を作り直すとき�
 ```bash
 python3 tools/build-data.py    # data/*.csv・city-list.json → data/places.js（データを取り直したとき）
 python3 tools/build.py         # src/ + data/places.js → index.html（1つのファイルにまとめる。人に渡せるように）
-python3 tools/build-print.py   # print.html（場所ごとの QR）
-python3 tools/check-qr.py      # QR を読み取って、印刷した文と同じか
+python3 tools/build-print.py   # print.html（場所ごとの掲示用ポスター）
 ```
 
 ## push する前の確認
