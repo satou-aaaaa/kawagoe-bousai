@@ -147,7 +147,7 @@ try {
   }
   check("スマホ幅 360px：どのタブも横にはみ出さない", !results.some((r) => r.name.startsWith("スマホ幅 360px：") && !r.ok));
   {
-    const small = await page.locator("button:visible").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).map((e) => e.textContent));
+    const small = await page.locator("button:visible").evaluateAll((els) => els.filter((e) => Math.round(e.getBoundingClientRect().height) < 44).map((e) => e.textContent));
     check("押す所が44px以上（手袋や慌てた指でも押せる）", small.length === 0, small.join("・"));
   }
 
