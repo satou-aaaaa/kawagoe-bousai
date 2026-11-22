@@ -1012,7 +1012,7 @@ window.SPOTS = [
     return `<h2>${esc(t("callT"))}</h2><ul class="calls"><li><a href="tel:119">${esc(t("call119"))}</a></li><li><a href="tel:110">${esc(t("call110"))}</a></li><li><a href="tel:171">${esc(t("call171"))}</a></li></ul>
       <h2>${esc(t("wifiT"))}</h2><p>${esc(t("wifi"))}</p>
       <h2>${esc(t("keepT"))}</h2><p>${esc(ios ? t("keepIos") : t("keepAndroid"))}</p><p class="hint">${esc(ios ? t("keepAndroid") : t("keepIos"))}</p>
-      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html">${esc(t("qrSheet"))}</a></p>
+      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html${st.lang === "ja" ? "" : "?lang=" + st.lang}">${esc(t("qrSheet"))}</a></p>
       <h2>${esc(t("linksT"))}</h2><ul class="links">
         <li><a href="https://www.city.kawagoe.saitama.jp/kurashi/anshin/1001545/1001581/1001583.html" target="_blank" rel="noopener">${esc(t("lnCity"))}</a></li>
         <li><a href="https://www.city.kawagoe.saitama.jp/shisei/shisetsu/hinanjyo/1013361.html" target="_blank" rel="noopener">${esc(t("lnHinan"))}</a></li>
