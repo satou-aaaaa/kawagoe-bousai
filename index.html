@@ -1,0 +1,1119 @@
+<!doctype html>
+<!-- 自動で作るファイル（tools/build.py）。直すのは src/ -->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>川越 避難ガイド</title>
+<meta name="description" content="川越市にいる人のための防災ページ。電波がなくても近くの避難場所の方角と距離がわかります。日本語・やさしい日本語・English・中文・한국어。">
+<meta name="theme-color" content="#b3261e">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'">
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--mut:#555;--acc:#b3261e;--line:#ddd;--card:#f6f6f6;--ok:#1b6e2e;--warnbg:#fff4d6;--offbg:#e8eefc}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#f1f1f1;--mut:#bbb;--acc:#ff8a80;--line:#333;--card:#1e1e1e;--ok:#81c995;--warnbg:#3a3000;--offbg:#1d2a44}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Noto Sans SC","Noto Sans KR",sans-serif}
+header,main,nav{max-width:720px;margin:0 auto;padding:0 16px}
+.top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding-top:12px}
+h1{font-size:1.4rem;margin:0;color:var(--acc)}
+h2{font-size:1.1rem;margin:1.2em 0 .4em}
+.subt{margin:.2em 0;color:var(--mut);font-size:.9rem}
+.lang select{font-size:1rem;padding:6px;min-height:44px}
+.status{padding:8px 12px;border-radius:8px;margin:8px 0;font-size:.95rem}
+.status.ok{background:var(--card);color:var(--ok)}.status.warn{background:var(--warnbg)}.status.off{background:var(--offbg);font-weight:bold}
+nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;position:sticky;top:0;background:var(--bg);padding-top:6px;padding-bottom:6px;z-index:2;border-bottom:1px solid var(--line)}
+nav button{min-height:52px;font-size:.78rem;line-height:1.2;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;padding:4px}
+nav button[aria-selected=true]{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:bold}
+main{padding-bottom:48px}main:focus{outline:none}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip,.sub{min-height:44px;padding:8px 14px;border-radius:22px;border:2px solid var(--line);background:var(--card);color:var(--fg);font-size:1rem}
+.chip[aria-pressed=true]{border-color:var(--acc);background:var(--acc);color:#fff;font-weight:bold}
+.main{width:100%;min-height:56px;font-size:1.05rem;font-weight:bold;border:none;border-radius:12px;background:var(--acc);color:#fff;padding:8px}
+.hint{color:var(--mut);font-size:.9rem}
+.warn{background:var(--warnbg);padding:8px 12px;border-radius:8px}
+.places{list-style:none;padding:0;margin:8px 0}
+.places li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;background:var(--card)}
+.no{font-weight:bold;min-width:1.4em;text-align:center;background:var(--acc);color:#fff;border-radius:50%;line-height:1.4em}
+.arrow{width:40px;height:40px;flex:none;fill:var(--acc);transition:transform .2s}
+.pl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pl b{font-size:1.05rem}.dd{font-weight:bold;font-size:1.1rem}.ad,.nt{color:var(--mut);font-size:.85rem}
+.tag{display:inline-block;width:max-content;font-size:.8rem;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-top:2px}
+.tag.up{border-color:var(--acc);color:var(--acc);font-weight:bold}
+.mini{margin:8px auto;max-width:320px}.mini svg{width:100%;height:auto}
+.ring{fill:none;stroke:var(--line);stroke-dasharray:4 4}.rl{font-size:10px;fill:var(--mut)}
+.north{font-size:12px;fill:var(--acc);text-anchor:middle;font-weight:bold}
+.me{fill:#1565c0}.dot{fill:var(--acc)}.dn{fill:#fff;font-size:12px;font-weight:bold;text-anchor:middle}
+.mini figcaption{text-align:center;color:var(--mut);font-size:.8rem}
+.steps li{margin:.4em 0}
+.talk{list-style:none;padding:0}.talk li{border:1px solid var(--line);border-radius:10px;padding:12px;margin:8px 0;background:var(--card)}
+.talk .big{display:block;font-size:1.35rem;font-weight:bold}.talk .tr{display:block;color:var(--mut)}
+.calls a{font-size:1.1rem;font-weight:bold}
+a{color:var(--acc)}
+@media print{nav,#status,.main{display:none}}
+.give{width:100%;min-height:52px;margin:0 0 8px;border:2px solid var(--acc);background:var(--bg);color:var(--acc);border-radius:12px;font-size:1.05rem;font-weight:bold}
+nav .share-tab{border-color:var(--acc)}
+.qrbox{background:#fff;padding:12px;border-radius:12px;max-width:300px;margin:8px auto;border:1px solid var(--line)}
+.qrbox svg{display:block;width:100%;height:auto}
+.url{word-break:break-all;text-align:center;font-size:.85rem;color:var(--mut)}
+.count{text-align:center;font-weight:bold;color:var(--ok)}
+.recv{background:var(--card);border-radius:10px;padding:8px 12px}
+.nojs{max-width:720px;margin:0 auto;padding:0 16px}
+/* 道順 */
+.rw{font-weight:bold;color:var(--acc)}.rw:empty{display:none}
+.rbtn{align-self:flex-start;margin:4px 0}
+#route:empty{display:none}
+#route{border:2px solid var(--acc);border-radius:12px;padding:10px;margin:10px 0;background:var(--card);scroll-margin-top:64px}
+#route h2{margin-top:0}
+.rmap{margin:8px auto;max-width:420px}.rmap svg{width:100%;height:auto;border-radius:8px}
+.rmap figcaption{color:var(--mut);font-size:.8rem;text-align:center}
+.rbg{fill:#fff}.rd{fill:none;stroke:#bbb;stroke-width:1.2;stroke-linecap:round}.rh{fill:none;stroke:#4fa3e0;stroke-width:3;stroke-linecap:round;opacity:.8}
+.rt{fill:none;stroke:#b3261e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.goal{fill:#b3261e;stroke:#fff;stroke-width:2}
+.rmap .north{fill:#b3261e}.rmap .me{fill:#111;stroke:#fff;stroke-width:2}
+.rsteps li{margin:.35em 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1 id="title">川越 避難ガイド</h1>
+  <label class="lang"><span id="lang-label">言語</span> <select id="lang" aria-labelledby="lang-label"></select></label></div>
+  <p id="sub" class="subt"></p>
+  <p id="status" class="status" role="status"></p>
+  <button type="button" class="give" id="give"></button>
+</header>
+<nav role="tablist" aria-label="menu">
+  <button type="button" role="tab" id="tab-near" data-tab="near"></button>
+  <button type="button" role="tab" id="tab-do" data-tab="do"></button>
+  <button type="button" role="tab" id="tab-talk" data-tab="talk"></button>
+  <button type="button" role="tab" id="tab-info" data-tab="info"></button>
+  <button type="button" role="tab" id="tab-share" data-tab="share" class="share-tab"></button>
+</nav>
+<main id="view" role="tabpanel" tabindex="-1"></main>
+<noscript><div class="nojs">
+<h2>簡易表示 / Simple view</h2>
+<p>119 火事・救急 Fire/Ambulance ／ 110 警察 Police ／ 171 災害用伝言ダイヤル Disaster message dial ／ 無料Wi-Fi 00000JAPAN</p>
+<h2>場所ごとの近い避難場所 / Nearest sites</h2><h3>一番街（時の鐘） / Ichibangai (Toki no Kane)</h3><p>地震 Earthquake</p><ol><li>川越小学校：東 280m / E 280m</li><li>やまぶき会館：東 330m / E 330m</li><li>初雁中学校：北東 430m / NE 430m</li></ol><p>大雨・洪水 Flood</p><ol><li>川越小学校：東 280m / E 280m</li><li>初雁中学校：北東 430m / NE 430m</li><li>川越第一小学校：東 440m / E 440m</li></ol><h3>本川越駅 / Hon-Kawagoe Station</h3><p>地震 Earthquake</p><ol><li>川越女子高等学校：西 280m / W 280m</li><li>中央小学校：北 310m / N 310m</li><li>川越工業高等学校：東 520m / E 520m</li></ol><p>大雨・洪水 Flood</p><ol><li>川越女子高等学校：西 280m / W 280m</li><li>中央小学校：北 310m / N 310m</li><li>川越工業高等学校：東 520m / E 520m</li></ol><h3>川越駅 / Kawagoe Station</h3><p>地震 Earthquake</p><ol><li>新宿町一丁目広場：南 340m / S 340m</li><li>仙波小学校：南東 400m / SE 400m</li><li>川越工業高等学校：北東 790m / NE 790m</li></ol><p>大雨・洪水 Flood</p><ol><li>仙波小学校：南東 400m / SE 400m</li><li>川越工業高等学校：北東 790m / NE 790m</li><li>富士見中学校：北西 870m / NW 870m</li></ol><h3>喜多院 / Kitain Temple</h3><p>地震 Earthquake</p><ol><li>中央公民館：北 300m / N 300m</li><li>川越総合高等学校：南東 400m / SE 400m</li><li>川越工業高等学校：南 510m / S 510m</li></ol><p>大雨・洪水 Flood</p><ol><li>中央公民館：北 300m / N 300m</li><li>川越総合高等学校：南東 400m / SE 400m</li><li>川越工業高等学校：南 510m / S 510m</li></ol><h3>川越氷川神社 / Kawagoe Hikawa Shrine</h3><p>地震 Earthquake</p><ol><li>北公民館：北 120m / N 120m</li><li>初雁中学校：南西 220m / SW 220m</li><li>川越高等学校：南 420m / S 420m</li></ol><p>大雨・洪水 Flood</p><ol><li>北公民館：北 120m / N 120m</li><li>初雁中学校：南西 220m / SW 220m</li><li>川越高等学校：南 420m / S 420m</li></ol>
+<h2>川越市の避難場所 全123か所 / All evacuation sites</h2><ul><li><b>霞ケ関南小学校</b> かすみ野1-1-4 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>水久保第一公園</b> かすみ野1-10 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>武蔵野小学校</b> むさし野14-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>中央公民館</b> 三久保町18-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>あおい公園</b> 上戸新町36-5 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>並木西町公園</b> 並木西町16 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>中央小学校</b> 中原町1-25 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越東高等学校</b> 久下戸6060 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>今成小学校</b> 今成2-42-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>御伊勢塚公園</b> 伊勢原町3-3 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>霞ケ関北小学校</b> 伊勢原町5-1-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>伊勢原公民館</b> 伊勢原町5-1-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越女子高等学校</b> 六軒町1-23 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>南台かすみ公園</b> 南台2-10 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>大東南公民館</b> 南台3-4-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>南台ふじみ公園</b> 南台3-5 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>大東中学校</b> 南大塚1-20-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越南高等学校</b> 南大塚1-21-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越少年刑務所鍛錬所前駐車場</b> 南大塚6-40-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>濯紫公園</b> 喜多町8-10 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>大塚小学校</b> 大塚2-10-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>上戸小学校</b> 大字上戸390-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>広谷小学校</b> 大字下広谷558-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越運動公園</b> 大字下老袋388-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>南古谷中学校</b> 大字久下戸3721 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>南古谷市民センター</b> 大字今泉371-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>東邦音楽大学校庭</b> 大字今泉84 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>南文化会館（ジョイフル）</b> 大字今福1295-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>福原市民センター</b> 大字今福481-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>福原小学校</b> 大字今福508 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>福原中学校</b> 大字今福512 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>伊佐沼公園</b> 大字伊佐沼584 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>グリーンツーリズム拠点施設</b> 大字伊佐沼887 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>芳野市民センター</b> 大字北田島119-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>城北埼玉高等学校</b> 大字古市場585-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>古谷市民センター</b> 大字古谷上3830-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>古谷小学校</b> 大字古谷上5465 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>教育センター</b> 大字古谷上6083-10 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>みよしの公園</b> 大字吉田685-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>寺尾中学校</b> 大字寺尾1068 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>寺尾小学校</b> 大字寺尾979-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>東中学校</b> 大字小中居278 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>川越工業高等学校グラウンド</b> 大字小仙波847 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>名細中学校</b> 大字小堤14 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>名細小学校</b> 大字小堤214 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>名細市民センター</b> 大字小堤662-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>泉小学校</b> 大字小室463 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>大東西小学校</b> 大字山城32-5 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>城西大学付属川越高等学校</b> 大字山田1042 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>北部地域ふれあいセンター</b> 大字山田1578-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>山田市民センター</b> 大字山田161-7 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>山田小学校</b> 大字山田167 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>山田中学校</b> 大字山田550 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>南古谷小学校</b> 大字木野目1451 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>川越（水上）公園</b> 大字池辺880 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>牛子小学校</b> 大字牛子418 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>東京国際大学第２キャンパス</b> 大字的場2509 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>霞ケ関東中学校</b> 大字的場2706 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>霞ケ関東小学校</b> 大字的場2735-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>芳野中学校</b> 大字石田本郷733 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>砂中学校</b> 大字砂260 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は3階以上 / Flood: 3F+）</li><li><b>高階運動広場</b> 大字砂451-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>川越初雁高等学校</b> 大字砂新田2564 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>高階西中学校</b> 大字砂新田2593 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>高階小学校</b> 大字砂新田58 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>霞ケ関小学校</b> 大字笠幡177 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>霞ケ関市民センター</b> 大字笠幡177-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越西高等学校</b> 大字笠幡2488-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>霞ケ関西公民館</b> 大字笠幡3001-12 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>霞ケ関西中学校</b> 大字笠幡3464-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>霞ケ関西小学校</b> 大字笠幡3971-4 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>秀明高等学校</b> 大字笠幡4792 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>霞ケ関中学校</b> 大字笠幡72 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>特別支援学校塙保己一学園</b> 大字笠幡85-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>高階中学校</b> 大字藤間10 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>高階西小学校</b> 大字藤間1102 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>高階市民センター</b> 大字藤間27-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>山村学園高等学校第一運動場</b> 大字野田1311-84 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>なぐわし公園</b> 大字鯨井1216 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>西文化会館（メルト）</b> 大字鯨井1556-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>東洋大学川越キャンパス</b> 大字鯨井2100 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>鯨井中学校</b> 大字鯨井562-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>芳野小学校</b> 大字鴨田331 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>初雁中学校</b> 宮下町1-21-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>市民グランド</b> 宮元町23-22 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>宮元町健康ふれあい広場</b> 宮元町33-4 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>仙波小学校</b> 富士見町4-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越総合高等学校</b> 小仙波町5-14 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越第一中学校</b> 小仙波町5-6 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>岸町健康ふれあい広場</b> 岸町3-32 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>川越西中学校</b> 川鶴1-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越西小学校</b> 川鶴1-5 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>笠幡公園</b> 川鶴2-7 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>川鶴市民センター</b> 川鶴2-8-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>新宿町一丁目広場</b> 新宿町1-1-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>城南中学校</b> 新宿町3-19-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>新宿小学校</b> 新宿町6-9-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>市立川越高等学校</b> 旭町2-3-7 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>月越小学校</b> 月吉町51 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>富士見中学校</b> 東田町17-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>北公民館</b> 氷川町107 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>的場たぬき山公園</b> 的場1-19 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>的場原公園</b> 的場2-17 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>東京国際大学第１キャンパス</b> 的場北1-13-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>星野高等学校第二校舎</b> 石原町2-71-11 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>高階北小学校</b> 砂新田1-16-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide（洪水は2階以上 / Flood: 2F+）</li><li><b>サンライフ川越・芳野台体育館</b> 芳野台1-103-57 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>大東西中学校</b> 藤倉1-1-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>藤原町第二公園</b> 藤原町18-6 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>高階南公民館</b> 藤原町23-7 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越工業高等学校</b> 西小仙波町2-28-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>高階南小学校</b> 諏訪町12-3 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>大東市民センター</b> 豊田本5-16-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>尚美学園大学川越キャンパス</b> 豊田町1-1-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>大東東小学校</b> 豊田町4-16-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>川越小学校</b> 郭町1-1-1 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>やまぶき会館</b> 郭町1-18-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>川越第一小学校</b> 郭町1-21 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>初雁公園</b> 郭町2-13-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>川越高等学校</b> 郭町2-6 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>野田中学校</b> 野田町2-19-14 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li><li><b>かほく運動公園</b> 霞ケ関北6-30-1 — 地震 Earthquake / 崖崩れ Landslide</li><li><b>霞ケ関北市民センター</b> 霞ケ関北6-30-2 — 地震 Earthquake / 洪水 Flood / 内水 Inland flood / 崖崩れ Landslide</li></ul>
+<p>出典：国土地理院（2026-08-31 更新分）・川越市（2026-06-22 更新）。最新は川越市で確認。非公式。</p>
+</div></noscript>
+<script>
+// 自動で作るファイル（tools/build-data.py）。手で直さない。
+// 出典: 国土地理院「指定緊急避難場所・指定避難所データ」（2026-08-31 更新分）・川越市「指定避難所・指定緊急避難場所一覧」（2026-06-22 更新）
+window.PLACES_META = {"gsi": "2026-08-31", "city": "2026-06-22", "count": 123};
+window.PLACES = [{"n":"霞ケ関南小学校","a":"かすみ野1-1-4","lat":35.903572,"lon":139.418387,"h":["flood","slope","quake","inland"],"s":true},{"n":"水久保第一公園","a":"かすみ野1-10","lat":35.903513,"lon":139.416735,"h":["slope","quake"],"s":false},{"n":"武蔵野小学校","a":"むさし野14-1","lat":35.893242,"lon":139.470038,"h":["flood","slope","quake","inland"],"s":true},{"n":"市立川越高等学校","a":"旭町2-3-7","lat":35.899167,"lon":139.474535,"h":["flood","slope","quake","inland"],"s":true},{"n":"御伊勢塚公園","a":"伊勢原町3-3","lat":35.923783,"lon":139.42577,"h":["slope","quake"],"s":false},{"n":"霞ケ関北小学校","a":"伊勢原町5-1-1","lat":35.920015,"lon":139.428187,"h":["flood","slope","quake","inland"],"s":true},{"n":"伊勢原公民館","a":"伊勢原町5-1-1","lat":35.920657,"lon":139.428132,"h":["flood","slope","quake","inland"],"s":true},{"n":"かほく運動公園","a":"霞ケ関北6-30-1","lat":35.925505,"lon":139.428924,"h":["slope","quake"],"s":false},{"n":"霞ケ関北市民センター","a":"霞ケ関北6-30-2","lat":35.925574,"lon":139.429527,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越小学校","a":"郭町1-1-1","lat":35.924023,"lon":139.486648,"h":["flood","slope","quake","inland"],"s":true},{"n":"やまぶき会館","a":"郭町1-18-1","lat":35.92331,"lon":139.487224,"h":["slope","quake"],"s":false},{"n":"川越第一小学校","a":"郭町1-21","lat":35.923112,"lon":139.488454,"h":["flood","slope","quake","inland"],"s":true},{"n":"初雁公園","a":"郭町2-13-1","lat":35.924907,"lon":139.49292,"h":["slope","quake"],"s":false},{"n":"川越高等学校","a":"郭町2-6","lat":35.923779,"lon":139.489548,"h":["flood","slope","quake","inland"],"s":true},{"n":"岸町健康ふれあい広場","a":"岸町3-32","lat":35.893518,"lon":139.481933,"h":["slope","quake"],"s":false},{"n":"濯紫公園","a":"喜多町8-10","lat":35.927096,"lon":139.480653,"h":["slope","quake"],"s":false},{"n":"川越東高等学校","a":"久下戸6060","lat":35.894258,"lon":139.550718,"h":["slope","quake"],"s":false},{"n":"初雁中学校","a":"宮下町1-21-3","lat":35.926302,"lon":139.486965,"h":["flood","slope","quake","inland"],"s":true},{"n":"市民グランド","a":"宮元町23-22","lat":35.931791,"lon":139.486867,"h":["slope","quake"],"s":false},{"n":"宮元町健康ふれあい広場","a":"宮元町33-4","lat":35.932086,"lon":139.483288,"h":["slope","quake"],"s":false,"note":"令和8年6月21日から供用開始。"},{"n":"月越小学校","a":"月吉町51","lat":35.919503,"lon":139.474845,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"今成小学校","a":"今成2-42-1","lat":35.9255,"lon":139.464901,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"高階北小学校","a":"砂新田1-16-1","lat":35.891299,"lon":139.486065,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"中央公民館","a":"三久保町18-3","lat":35.920587,"lon":139.4888,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越総合高等学校","a":"小仙波町5-14","lat":35.915469,"lon":139.491843,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越第一中学校","a":"小仙波町5-6","lat":35.91345,"lon":139.490332,"h":["flood","slope","quake","inland"],"s":true},{"n":"あおい公園","a":"上戸新町36-5","lat":35.924312,"lon":139.450395,"h":["slope","quake"],"s":false},{"n":"新宿町一丁目広場","a":"新宿町1-1-1","lat":35.90379,"lon":139.483658,"h":["slope","quake"],"s":false,"note":"令和8年7月4日から供用開始。"},{"n":"城南中学校","a":"新宿町3-19-1","lat":35.898402,"lon":139.484628,"h":["flood","slope","quake","inland"],"s":true},{"n":"新宿小学校","a":"新宿町6-9-1","lat":35.895045,"lon":139.477323,"h":["flood","slope","quake","inland"],"s":true},{"n":"高階南小学校","a":"諏訪町12-3","lat":35.880315,"lon":139.499289,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越工業高等学校","a":"西小仙波町2-28-1","lat":35.9134,"lon":139.487252,"h":["flood","slope","quake","inland"],"s":true},{"n":"星野高等学校第二校舎","a":"石原町2-71-11","lat":35.927294,"lon":139.469437,"h":["slope","quake"],"s":false},{"n":"川越西中学校","a":"川鶴1-1","lat":35.92392,"lon":139.419887,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越西小学校","a":"川鶴1-5","lat":35.923246,"lon":139.418091,"h":["flood","slope","quake","inland"],"s":true},{"n":"笠幡公園","a":"川鶴2-7","lat":35.922301,"lon":139.411964,"h":["slope","quake"],"s":false},{"n":"川鶴市民センター","a":"川鶴2-8-3","lat":35.923137,"lon":139.411824,"h":["flood","slope","quake","inland"],"s":true},{"n":"伊佐沼公園","a":"大字伊佐沼584","lat":35.922695,"lon":139.513929,"h":["slope","quake"],"s":false},{"n":"グリーンツーリズム拠点施設","a":"大字伊佐沼887","lat":35.928966,"lon":139.513944,"h":["slope","quake"],"s":false},{"n":"広谷小学校","a":"大字下広谷558-1","lat":35.950888,"lon":139.43013,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越運動公園","a":"大字下老袋388-1","lat":35.92894,"lon":139.528085,"h":["flood","slope","quake","inland"],"s":false,"f":2,"note":"総合体育館の空調整備等が整備工事中のため、令和9年3月31日（予定）まで、同体育館の利用不可。"},{"n":"霞ケ関小学校","a":"大字笠幡177","lat":35.912081,"lon":139.421443,"h":["flood","slope","quake","inland"],"s":true},{"n":"霞ケ関市民センター","a":"大字笠幡177-1","lat":35.911989,"lon":139.422461,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越西高等学校","a":"大字笠幡2488-1","lat":35.911078,"lon":139.395535,"h":["flood","slope","quake","inland"],"s":true},{"n":"霞ケ関西公民館","a":"大字笠幡3001-12","lat":35.910942,"lon":139.396664,"h":["flood","slope","quake","inland"],"s":true},{"n":"霞ケ関西中学校","a":"大字笠幡3464-3","lat":35.904991,"lon":139.406688,"h":["flood","slope","quake","inland"],"s":true},{"n":"霞ケ関西小学校","a":"大字笠幡3971-4","lat":35.908758,"lon":139.401779,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"秀明高等学校","a":"大字笠幡4792","lat":35.907834,"lon":139.412092,"h":["slope","quake"],"s":false},{"n":"霞ケ関中学校","a":"大字笠幡72","lat":35.910504,"lon":139.420962,"h":["flood","slope","quake","inland"],"s":true},{"n":"特別支援学校塙保己一学園","a":"大字笠幡85-1","lat":35.908645,"lon":139.420267,"h":["slope","quake"],"s":false},{"n":"芳野小学校","a":"大字鴨田331","lat":35.943357,"lon":139.510118,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"みよしの公園","a":"大字吉田685-1","lat":35.93022,"lon":139.436428,"h":["slope","quake"],"s":false},{"n":"南古谷中学校","a":"大字久下戸3721","lat":35.897389,"lon":139.530896,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"牛子小学校","a":"大字牛子418","lat":35.893746,"lon":139.509673,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"なぐわし公園","a":"大字鯨井1216","lat":35.939875,"lon":139.451241,"h":["slope","quake"],"s":false},{"n":"西文化会館（メルト）","a":"大字鯨井1556-1","lat":35.932767,"lon":139.443061,"h":["flood","slope","quake","inland"],"s":false},{"n":"東洋大学川越キャンパス","a":"大字鯨井2100","lat":35.935673,"lon":139.433777,"h":["slope","quake"],"s":false},{"n":"鯨井中学校","a":"大字鯨井562-2","lat":35.935453,"lon":139.456354,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"城北埼玉高等学校","a":"大字古市場585-1","lat":35.885914,"lon":139.529902,"h":["flood","slope","quake","inland"],"s":false,"f":2,"note":"洪水時、内水氾濫時は体育館及び武道館が利用可。"},{"n":"古谷市民センター","a":"大字古谷上3830-2","lat":35.915769,"lon":139.525216,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"古谷小学校","a":"大字古谷上5465","lat":35.917506,"lon":139.532299,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"教育センター","a":"大字古谷上6083-10","lat":35.916082,"lon":139.537279,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"南古谷市民センター","a":"大字今泉371-1","lat":35.895512,"lon":139.527292,"h":["slope","quake"],"s":true},{"n":"東邦音楽大学校庭","a":"大字今泉84","lat":35.896451,"lon":139.523381,"h":["slope","quake"],"s":false},{"n":"南文化会館（ジョイフル）","a":"大字今福1295-2","lat":35.876924,"lon":139.485773,"h":["flood","slope","quake","inland"],"s":false},{"n":"福原市民センター","a":"大字今福481-3","lat":35.874337,"lon":139.473223,"h":["flood","slope","quake","inland"],"s":true},{"n":"福原小学校","a":"大字今福508","lat":35.87276,"lon":139.472462,"h":["flood","slope","quake","inland"],"s":true},{"n":"福原中学校","a":"大字今福512","lat":35.873903,"lon":139.472739,"h":["flood","slope","quake","inland"],"s":true},{"n":"砂中学校","a":"大字砂260","lat":35.900304,"lon":139.49845,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"高階運動広場","a":"大字砂451-1","lat":35.896028,"lon":139.500831,"h":["slope","quake"],"s":false},{"n":"川越初雁高等学校","a":"大字砂新田2564","lat":35.877808,"lon":139.48859,"h":["flood","slope","quake","inland"],"s":true},{"n":"高階西中学校","a":"大字砂新田2593","lat":35.876031,"lon":139.490907,"h":["flood","slope","quake","inland"],"s":true},{"n":"高階小学校","a":"大字砂新田58","lat":35.888813,"lon":139.494973,"h":["flood","slope","quake","inland"],"s":true},{"n":"大東西小学校","a":"大字山城32-5","lat":35.891462,"lon":139.442877,"h":["flood","slope","quake","inland"],"s":true},{"n":"城西大学付属川越高等学校","a":"大字山田1042","lat":35.954664,"lon":139.478111,"h":["slope","quake"],"s":false},{"n":"北部地域ふれあいセンター","a":"大字山田1578-1","lat":35.94382,"lon":139.480345,"h":["slope","quake"],"s":false},{"n":"山田市民センター","a":"大字山田161-7","lat":35.940994,"lon":139.477843,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"山田小学校","a":"大字山田167","lat":35.941459,"lon":139.476768,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"山田中学校","a":"大字山田550","lat":35.939211,"lon":139.474454,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"寺尾中学校","a":"大字寺尾1068","lat":35.883868,"lon":139.511808,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"寺尾小学校","a":"大字寺尾979-2","lat":35.883184,"lon":139.513509,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"泉小学校","a":"大字小室463","lat":35.917674,"lon":139.464721,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"川越工業高等学校グラウンド","a":"大字小仙波847","lat":35.915192,"lon":139.503764,"h":["slope","quake"],"s":false},{"n":"東中学校","a":"大字小中居278","lat":35.905575,"lon":139.524125,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"名細中学校","a":"大字小堤14","lat":35.936585,"lon":139.437259,"h":["flood","slope","quake","inland"],"s":true},{"n":"名細小学校","a":"大字小堤214","lat":35.938313,"lon":139.440572,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"名細市民センター","a":"大字小堤662-1","lat":35.939669,"lon":139.435399,"h":["flood","slope","quake","inland"],"s":true},{"n":"上戸小学校","a":"大字上戸390-1","lat":35.931058,"lon":139.452799,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"芳野中学校","a":"大字石田本郷733","lat":35.946309,"lon":139.510862,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"川越（水上）公園","a":"大字池辺880","lat":35.912559,"lon":139.450265,"h":["slope","quake"],"s":false},{"n":"東京国際大学第２キャンパス","a":"大字的場2509","lat":35.920328,"lon":139.445221,"h":["slope","quake"],"s":false},{"n":"霞ケ関東中学校","a":"大字的場2706","lat":35.92015,"lon":139.447855,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"霞ケ関東小学校","a":"大字的場2735-2","lat":35.920771,"lon":139.449089,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"高階中学校","a":"大字藤間10","lat":35.885522,"lon":139.494159,"h":["flood","slope","quake","inland"],"s":true},{"n":"高階西小学校","a":"大字藤間1102","lat":35.876436,"lon":139.494591,"h":["flood","slope","quake","inland"],"s":true},{"n":"高階市民センター","a":"大字藤間27-1","lat":35.88606,"lon":139.49664,"h":["flood","slope","quake","inland"],"s":true},{"n":"芳野市民センター","a":"大字北田島119-2","lat":35.933263,"lon":139.499446,"h":["flood","slope","quake","inland"],"s":true,"f":2},{"n":"南古谷小学校","a":"大字木野目1451","lat":35.897339,"lon":139.521806,"h":["flood","slope","quake","inland"],"s":true,"f":3},{"n":"山村学園高等学校第一運動場","a":"大字野田1311-84","lat":35.918726,"lon":139.470407,"h":["slope","quake"],"s":false},{"n":"大塚小学校","a":"大塚2-10-1","lat":35.896126,"lon":139.469177,"h":["flood","slope","quake","inland"],"s":true},{"n":"中央小学校","a":"中原町1-25","lat":35.917378,"lon":139.481119,"h":["flood","slope","quake","inland"],"s":true},{"n":"的場たぬき山公園","a":"的場1-19","lat":35.9119,"lon":139.4279,"h":["slope","quake"],"s":false},{"n":"的場原公園","a":"的場2-17","lat":35.91584,"lon":139.42809,"h":["slope","quake"],"s":false},{"n":"東京国際大学第１キャンパス","a":"的場北1-13-1","lat":35.927,"lon":139.438915,"h":["slope","quake"],"s":false},{"n":"富士見中学校","a":"東田町17-1","lat":35.912059,"lon":139.476432,"h":["flood","slope","quake","inland"],"s":true},{"n":"藤原町第二公園","a":"藤原町18-6","lat":35.881984,"lon":139.498149,"h":["slope","quake"],"s":false},{"n":"高階南公民館","a":"藤原町23-7","lat":35.88327,"lon":139.500635,"h":["flood","slope","quake","inland"],"s":true},{"n":"大東西中学校","a":"藤倉1-1-1","lat":35.892551,"lon":139.43936,"h":["flood","slope","quake","inland"],"s":true},{"n":"南台かすみ公園","a":"南台2-10","lat":35.891691,"lon":139.453211,"h":["slope","quake"],"s":false},{"n":"大東南公民館","a":"南台3-4-3","lat":35.88739,"lon":139.455927,"h":["flood","slope","quake","inland"],"s":true},{"n":"南台ふじみ公園","a":"南台3-5","lat":35.88744,"lon":139.45471,"h":["slope","quake"],"s":false},{"n":"大東中学校","a":"南大塚1-20-1","lat":35.897372,"lon":139.452874,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越南高等学校","a":"南大塚1-21-1","lat":35.898014,"lon":139.452319,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越少年刑務所鍛錬所前駐車場","a":"南大塚6-40-1","lat":35.879253,"lon":139.458121,"h":["slope","quake"],"s":false},{"n":"北公民館","a":"氷川町107","lat":35.928571,"lon":139.488383,"h":["flood","slope","quake","inland"],"s":true},{"n":"仙波小学校","a":"富士見町4-1","lat":35.905279,"lon":139.487634,"h":["flood","slope","quake","inland"],"s":true},{"n":"並木西町公園","a":"並木西町16","lat":35.900106,"lon":139.512681,"h":["slope","quake"],"s":false},{"n":"サンライフ川越・芳野台体育館","a":"芳野台1-103-57","lat":35.947993,"lon":139.523756,"h":["slope","quake"],"s":false},{"n":"尚美学園大学川越キャンパス","a":"豊田町1-1-1","lat":35.907508,"lon":139.459434,"h":["slope","quake"],"s":false},{"n":"大東東小学校","a":"豊田町4-16-1","lat":35.904974,"lon":139.453983,"h":["flood","slope","quake","inland"],"s":true},{"n":"大東市民センター","a":"豊田本5-16-1","lat":35.898906,"lon":139.450221,"h":["flood","slope","quake","inland"],"s":true},{"n":"野田中学校","a":"野田町2-19-14","lat":35.908863,"lon":139.46877,"h":["flood","slope","quake","inland"],"s":true},{"n":"川越女子高等学校","a":"六軒町1-23","lat":35.915465,"lon":139.478813,"h":["flood","slope","quake","inland"],"s":true}];
+</script>
+<script>
+window.APP_URL = "https://satou-aaaaa.github.io/kawagoe-bousai/";
+window.APP_QR = {"ja": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 41 41\" shape-rendering=\"crispEdges\" role=\"img\" aria-label=\"QR\"><rect width=\"41\" height=\"41\" fill=\"#fff\"/><path fill=\"#000\" d=\"M4 4h7v1h-7zM12 4h2v1h-2zM16 4h4v1h-4zM22 4h1v1h-1zM25 4h1v1h-1zM27 4h2v1h-2zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM17 5h2v1h-2zM20 5h1v1h-1zM22 5h2v1h-2zM25 5h2v1h-2zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM13 6h4v1h-4zM18 6h1v1h-1zM21 6h5v1h-5zM27 6h2v1h-2zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM20 7h2v1h-2zM25 7h3v1h-3zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h2v1h-2zM16 8h1v1h-1zM20 8h2v1h-2zM23 8h1v1h-1zM25 8h1v1h-1zM27 8h2v1h-2zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM16 9h1v1h-1zM19 9h1v1h-1zM22 9h1v1h-1zM24 9h1v1h-1zM26 9h1v1h-1zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM18 11h1v1h-1zM21 11h5v1h-5zM27 11h1v1h-1zM4 12h1v1h-1zM8 12h1v1h-1zM10 12h4v1h-4zM15 12h1v1h-1zM19 12h1v1h-1zM21 12h1v1h-1zM24 12h4v1h-4zM29 12h5v1h-5zM36 12h1v1h-1zM5 13h5v1h-5zM12 13h1v1h-1zM14 13h2v1h-2zM18 13h4v1h-4zM25 13h1v1h-1zM27 13h1v1h-1zM29 13h1v1h-1zM33 13h3v1h-3zM7 14h2v1h-2zM10 14h1v1h-1zM17 14h3v1h-3zM22 14h1v1h-1zM27 14h2v1h-2zM33 14h1v1h-1zM35 14h1v1h-1zM4 15h5v1h-5zM11 15h1v1h-1zM13 15h1v1h-1zM15 15h1v1h-1zM17 15h1v1h-1zM19 15h2v1h-2zM23 15h2v1h-2zM26 15h1v1h-1zM28 15h1v1h-1zM30 15h1v1h-1zM35 15h2v1h-2zM4 16h1v1h-1zM8 16h3v1h-3zM12 16h1v1h-1zM14 16h4v1h-4zM19 16h2v1h-2zM26 16h3v1h-3zM30 16h1v1h-1zM32 16h2v1h-2zM36 16h1v1h-1zM5 17h2v1h-2zM9 17h1v1h-1zM11 17h1v1h-1zM13 17h1v1h-1zM15 17h2v1h-2zM18 17h1v1h-1zM22 17h3v1h-3zM27 17h1v1h-1zM29 17h1v1h-1zM31 17h1v1h-1zM34 17h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h3v1h-3zM12 18h1v1h-1zM14 18h3v1h-3zM18 18h2v1h-2zM21 18h2v1h-2zM24 18h7v1h-7zM32 18h1v1h-1zM35 18h1v1h-1zM4 19h5v1h-5zM12 19h3v1h-3zM16 19h2v1h-2zM19 19h3v1h-3zM25 19h1v1h-1zM27 19h1v1h-1zM29 19h2v1h-2zM5 20h4v1h-4zM10 20h1v1h-1zM13 20h1v1h-1zM16 20h2v1h-2zM21 20h1v1h-1zM23 20h4v1h-4zM28 20h1v1h-1zM30 20h1v1h-1zM32 20h1v1h-1zM35 20h1v1h-1zM4 21h1v1h-1zM6 21h1v1h-1zM12 21h1v1h-1zM16 21h2v1h-2zM19 21h2v1h-2zM22 21h1v1h-1zM24 21h1v1h-1zM27 21h1v1h-1zM33 21h2v1h-2zM5 22h3v1h-3zM10 22h4v1h-4zM15 22h2v1h-2zM19 22h3v1h-3zM24 22h4v1h-4zM29 22h3v1h-3zM33 22h1v1h-1zM35 22h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM11 23h3v1h-3zM15 23h3v1h-3zM21 23h2v1h-2zM25 23h1v1h-1zM27 23h5v1h-5zM35 23h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM9 24h2v1h-2zM15 24h5v1h-5zM22 24h3v1h-3zM28 24h1v1h-1zM30 24h1v1h-1zM32 24h2v1h-2zM35 24h2v1h-2zM4 25h4v1h-4zM11 25h2v1h-2zM14 25h1v1h-1zM16 25h1v1h-1zM20 25h2v1h-2zM23 25h1v1h-1zM26 25h2v1h-2zM33 25h3v1h-3zM6 26h2v1h-2zM10 26h1v1h-1zM12 26h2v1h-2zM17 26h1v1h-1zM20 26h2v1h-2zM23 26h1v1h-1zM25 26h4v1h-4zM32 26h1v1h-1zM34 26h2v1h-2zM6 27h2v1h-2zM21 27h1v1h-1zM23 27h3v1h-3zM29 27h2v1h-2zM32 27h1v1h-1zM35 27h1v1h-1zM4 28h7v1h-7zM12 28h2v1h-2zM16 28h1v1h-1zM18 28h2v1h-2zM21 28h1v1h-1zM24 28h3v1h-3zM28 28h5v1h-5zM12 29h1v1h-1zM14 29h1v1h-1zM17 29h1v1h-1zM19 29h1v1h-1zM21 29h1v1h-1zM25 29h1v1h-1zM27 29h2v1h-2zM32 29h1v1h-1zM34 29h2v1h-2zM4 30h7v1h-7zM12 30h2v1h-2zM15 30h1v1h-1zM17 30h4v1h-4zM22 30h1v1h-1zM24 30h1v1h-1zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h2v1h-2zM35 30h1v1h-1zM4 31h1v1h-1zM10 31h1v1h-1zM13 31h1v1h-1zM20 31h1v1h-1zM26 31h1v1h-1zM28 31h1v1h-1zM32 31h1v1h-1zM35 31h2v1h-2zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h4v1h-4zM17 32h1v1h-1zM20 32h1v1h-1zM23 32h1v1h-1zM26 32h1v1h-1zM28 32h6v1h-6zM35 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM13 33h1v1h-1zM22 33h3v1h-3zM27 33h2v1h-2zM30 33h4v1h-4zM35 33h1v1h-1zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM15 34h1v1h-1zM18 34h2v1h-2zM21 34h2v1h-2zM24 34h4v1h-4zM30 34h3v1h-3zM34 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM14 35h1v1h-1zM16 35h7v1h-7zM25 35h1v1h-1zM28 35h2v1h-2zM4 36h7v1h-7zM12 36h1v1h-1zM15 36h3v1h-3zM21 36h1v1h-1zM23 36h6v1h-6zM30 36h1v1h-1zM36 36h1v1h-1z\"/></svg>", "easy": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 41 41\" shape-rendering=\"crispEdges\" role=\"img\" aria-label=\"QR\"><rect width=\"41\" height=\"41\" fill=\"#fff\"/><path fill=\"#000\" d=\"M4 4h7v1h-7zM13 4h1v1h-1zM15 4h2v1h-2zM22 4h3v1h-3zM27 4h2v1h-2zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM14 5h1v1h-1zM19 5h2v1h-2zM22 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM12 6h5v1h-5zM18 6h1v1h-1zM20 6h1v1h-1zM23 6h4v1h-4zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h3v1h-3zM21 7h1v1h-1zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h2v1h-2zM17 8h5v1h-5zM23 8h2v1h-2zM26 8h3v1h-3zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM14 9h5v1h-5zM22 9h1v1h-1zM24 9h3v1h-3zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h2v1h-2zM16 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM24 11h3v1h-3zM28 11h1v1h-1zM4 12h1v1h-1zM6 12h5v1h-5zM13 12h2v1h-2zM16 12h3v1h-3zM21 12h1v1h-1zM26 12h2v1h-2zM30 12h5v1h-5zM4 13h2v1h-2zM11 13h1v1h-1zM14 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM23 13h2v1h-2zM27 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM13 14h2v1h-2zM16 14h7v1h-7zM26 14h1v1h-1zM32 14h1v1h-1zM34 14h2v1h-2zM4 15h1v1h-1zM6 15h1v1h-1zM8 15h2v1h-2zM11 15h1v1h-1zM13 15h2v1h-2zM16 15h2v1h-2zM19 15h1v1h-1zM23 15h5v1h-5zM30 15h1v1h-1zM32 15h5v1h-5zM5 16h1v1h-1zM8 16h8v1h-8zM18 16h1v1h-1zM20 16h2v1h-2zM23 16h1v1h-1zM26 16h4v1h-4zM31 16h3v1h-3zM35 16h1v1h-1zM6 17h1v1h-1zM8 17h2v1h-2zM12 17h1v1h-1zM14 17h3v1h-3zM19 17h1v1h-1zM23 17h3v1h-3zM27 17h1v1h-1zM30 17h1v1h-1zM34 17h3v1h-3zM4 18h1v1h-1zM7 18h4v1h-4zM12 18h1v1h-1zM14 18h1v1h-1zM19 18h2v1h-2zM24 18h2v1h-2zM29 18h2v1h-2zM33 18h3v1h-3zM9 19h1v1h-1zM11 19h1v1h-1zM16 19h1v1h-1zM19 19h1v1h-1zM22 19h1v1h-1zM24 19h3v1h-3zM28 19h3v1h-3zM32 19h3v1h-3zM8 20h3v1h-3zM12 20h1v1h-1zM14 20h2v1h-2zM18 20h2v1h-2zM21 20h1v1h-1zM23 20h1v1h-1zM26 20h1v1h-1zM28 20h2v1h-2zM31 20h2v1h-2zM36 20h1v1h-1zM5 21h2v1h-2zM12 21h1v1h-1zM15 21h1v1h-1zM20 21h4v1h-4zM27 21h1v1h-1zM29 21h3v1h-3zM33 21h4v1h-4zM6 22h6v1h-6zM13 22h3v1h-3zM18 22h2v1h-2zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h5v1h-5zM34 22h2v1h-2zM4 23h1v1h-1zM7 23h3v1h-3zM13 23h4v1h-4zM18 23h1v1h-1zM20 23h1v1h-1zM25 23h1v1h-1zM29 23h7v1h-7zM4 24h1v1h-1zM8 24h1v1h-1zM10 24h3v1h-3zM17 24h2v1h-2zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM28 24h2v1h-2zM31 24h3v1h-3zM4 25h2v1h-2zM9 25h1v1h-1zM11 25h1v1h-1zM13 25h5v1h-5zM19 25h5v1h-5zM25 25h1v1h-1zM27 25h1v1h-1zM29 25h3v1h-3zM33 25h2v1h-2zM36 25h1v1h-1zM4 26h1v1h-1zM6 26h3v1h-3zM10 26h1v1h-1zM13 26h1v1h-1zM17 26h1v1h-1zM22 26h1v1h-1zM24 26h2v1h-2zM33 26h1v1h-1zM35 26h1v1h-1zM4 27h1v1h-1zM7 27h2v1h-2zM11 27h1v1h-1zM16 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM22 27h9v1h-9zM33 27h4v1h-4zM4 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM10 28h1v1h-1zM13 28h1v1h-1zM15 28h1v1h-1zM17 28h2v1h-2zM21 28h1v1h-1zM26 28h1v1h-1zM28 28h5v1h-5zM35 28h1v1h-1zM12 29h4v1h-4zM21 29h1v1h-1zM23 29h3v1h-3zM27 29h2v1h-2zM32 29h1v1h-1zM34 29h1v1h-1zM36 29h1v1h-1zM4 30h7v1h-7zM13 30h1v1h-1zM15 30h5v1h-5zM21 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h2v1h-2zM4 31h1v1h-1zM10 31h1v1h-1zM12 31h7v1h-7zM21 31h2v1h-2zM25 31h4v1h-4zM32 31h5v1h-5zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h1v1h-1zM14 32h1v1h-1zM16 32h5v1h-5zM26 32h1v1h-1zM28 32h6v1h-6zM36 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM12 33h4v1h-4zM18 33h2v1h-2zM22 33h4v1h-4zM27 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM12 34h1v1h-1zM14 34h3v1h-3zM19 34h2v1h-2zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h2v1h-2zM33 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM13 35h1v1h-1zM18 35h2v1h-2zM23 35h5v1h-5zM29 35h1v1h-1zM32 35h3v1h-3zM4 36h7v1h-7zM12 36h1v1h-1zM14 36h4v1h-4zM19 36h1v1h-1zM21 36h1v1h-1zM23 36h1v1h-1zM26 36h4v1h-4zM31 36h1v1h-1zM35 36h1v1h-1z\"/></svg>", "en": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 41 41\" shape-rendering=\"crispEdges\" role=\"img\" aria-label=\"QR\"><rect width=\"41\" height=\"41\" fill=\"#fff\"/><path fill=\"#000\" d=\"M4 4h7v1h-7zM21 4h4v1h-4zM27 4h2v1h-2zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM19 5h3v1h-3zM24 5h1v1h-1zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM12 6h2v1h-2zM15 6h2v1h-2zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h5v1h-5zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h3v1h-3zM16 7h1v1h-1zM22 7h1v1h-1zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM17 8h8v1h-8zM26 8h3v1h-3zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM17 9h2v1h-2zM22 9h1v1h-1zM24 9h3v1h-3zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h3v1h-3zM16 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM24 11h3v1h-3zM28 11h1v1h-1zM4 12h1v1h-1zM6 12h5v1h-5zM13 12h2v1h-2zM16 12h3v1h-3zM21 12h1v1h-1zM26 12h2v1h-2zM30 12h5v1h-5zM5 13h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM12 13h2v1h-2zM16 13h2v1h-2zM20 13h2v1h-2zM23 13h2v1h-2zM27 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h1v1h-1zM4 14h1v1h-1zM6 14h3v1h-3zM10 14h2v1h-2zM13 14h1v1h-1zM17 14h5v1h-5zM26 14h1v1h-1zM32 14h1v1h-1zM34 14h2v1h-2zM5 15h2v1h-2zM13 15h1v1h-1zM16 15h2v1h-2zM19 15h1v1h-1zM21 15h7v1h-7zM30 15h1v1h-1zM32 15h5v1h-5zM6 16h5v1h-5zM13 16h1v1h-1zM16 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM26 16h4v1h-4zM31 16h3v1h-3zM35 16h1v1h-1zM5 17h4v1h-4zM11 17h1v1h-1zM13 17h1v1h-1zM16 17h2v1h-2zM19 17h1v1h-1zM22 17h4v1h-4zM27 17h1v1h-1zM30 17h1v1h-1zM34 17h3v1h-3zM5 18h1v1h-1zM7 18h1v1h-1zM10 18h1v1h-1zM12 18h1v1h-1zM14 18h2v1h-2zM18 18h3v1h-3zM24 18h2v1h-2zM29 18h2v1h-2zM33 18h3v1h-3zM4 19h3v1h-3zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h3v1h-3zM18 19h2v1h-2zM22 19h1v1h-1zM24 19h3v1h-3zM28 19h3v1h-3zM32 19h3v1h-3zM5 20h3v1h-3zM9 20h4v1h-4zM14 20h1v1h-1zM17 20h1v1h-1zM19 20h1v1h-1zM21 20h1v1h-1zM23 20h1v1h-1zM26 20h1v1h-1zM28 20h2v1h-2zM31 20h2v1h-2zM36 20h1v1h-1zM5 21h1v1h-1zM7 21h1v1h-1zM9 21h1v1h-1zM13 21h4v1h-4zM18 21h1v1h-1zM20 21h1v1h-1zM22 21h2v1h-2zM27 21h1v1h-1zM29 21h3v1h-3zM33 21h4v1h-4zM6 22h2v1h-2zM10 22h3v1h-3zM14 22h4v1h-4zM19 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h5v1h-5zM34 22h2v1h-2zM6 23h1v1h-1zM11 23h4v1h-4zM20 23h1v1h-1zM25 23h1v1h-1zM29 23h7v1h-7zM5 24h2v1h-2zM8 24h3v1h-3zM12 24h3v1h-3zM17 24h2v1h-2zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM28 24h2v1h-2zM31 24h3v1h-3zM4 25h5v1h-5zM12 25h1v1h-1zM14 25h1v1h-1zM17 25h5v1h-5zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h1v1h-1zM29 25h3v1h-3zM33 25h2v1h-2zM36 25h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM13 26h1v1h-1zM17 26h1v1h-1zM22 26h1v1h-1zM24 26h2v1h-2zM33 26h1v1h-1zM35 26h1v1h-1zM4 27h1v1h-1zM6 27h2v1h-2zM12 27h1v1h-1zM15 27h2v1h-2zM20 27h1v1h-1zM22 27h9v1h-9zM33 27h3v1h-3zM4 28h1v1h-1zM6 28h2v1h-2zM10 28h3v1h-3zM14 28h3v1h-3zM18 28h1v1h-1zM21 28h1v1h-1zM26 28h1v1h-1zM28 28h5v1h-5zM35 28h1v1h-1zM12 29h1v1h-1zM14 29h1v1h-1zM16 29h2v1h-2zM21 29h1v1h-1zM23 29h3v1h-3zM27 29h2v1h-2zM32 29h1v1h-1zM34 29h1v1h-1zM36 29h1v1h-1zM4 30h7v1h-7zM13 30h5v1h-5zM19 30h1v1h-1zM21 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h2v1h-2zM4 31h1v1h-1zM10 31h1v1h-1zM12 31h3v1h-3zM16 31h3v1h-3zM21 31h2v1h-2zM25 31h4v1h-4zM32 31h5v1h-5zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h2v1h-2zM19 32h2v1h-2zM26 32h1v1h-1zM28 32h6v1h-6zM36 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM16 33h4v1h-4zM22 33h4v1h-4zM27 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM12 34h2v1h-2zM16 34h2v1h-2zM19 34h2v1h-2zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h2v1h-2zM33 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM15 35h1v1h-1zM19 35h1v1h-1zM23 35h5v1h-5zM29 35h1v1h-1zM32 35h3v1h-3zM4 36h7v1h-7zM12 36h2v1h-2zM17 36h1v1h-1zM19 36h1v1h-1zM21 36h1v1h-1zM23 36h1v1h-1zM26 36h4v1h-4zM31 36h1v1h-1zM35 36h1v1h-1z\"/></svg>", "zh": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 41 41\" shape-rendering=\"crispEdges\" role=\"img\" aria-label=\"QR\"><rect width=\"41\" height=\"41\" fill=\"#fff\"/><path fill=\"#000\" d=\"M4 4h7v1h-7zM21 4h4v1h-4zM27 4h2v1h-2zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM19 5h2v1h-2zM22 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h3v1h-3zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h5v1h-5zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM22 7h1v1h-1zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h11v1h-11zM26 8h3v1h-3zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM16 9h3v1h-3zM22 9h1v1h-1zM25 9h2v1h-2zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h3v1h-3zM16 11h1v1h-1zM18 11h1v1h-1zM20 11h1v1h-1zM23 11h1v1h-1zM25 11h2v1h-2zM28 11h1v1h-1zM4 12h1v1h-1zM6 12h5v1h-5zM13 12h2v1h-2zM16 12h3v1h-3zM21 12h1v1h-1zM23 12h1v1h-1zM26 12h2v1h-2zM30 12h5v1h-5zM5 13h1v1h-1zM7 13h3v1h-3zM12 13h1v1h-1zM16 13h2v1h-2zM20 13h2v1h-2zM23 13h2v1h-2zM27 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h1v1h-1zM6 14h2v1h-2zM10 14h2v1h-2zM13 14h1v1h-1zM17 14h5v1h-5zM26 14h1v1h-1zM32 14h1v1h-1zM34 14h2v1h-2zM6 15h1v1h-1zM8 15h1v1h-1zM16 15h2v1h-2zM19 15h1v1h-1zM21 15h7v1h-7zM30 15h1v1h-1zM32 15h5v1h-5zM4 16h4v1h-4zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h1v1h-1zM16 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM23 16h2v1h-2zM26 16h4v1h-4zM31 16h3v1h-3zM35 16h1v1h-1zM5 17h1v1h-1zM8 17h2v1h-2zM13 17h1v1h-1zM15 17h3v1h-3zM19 17h1v1h-1zM22 17h4v1h-4zM27 17h1v1h-1zM30 17h1v1h-1zM34 17h3v1h-3zM5 18h1v1h-1zM10 18h2v1h-2zM14 18h2v1h-2zM18 18h3v1h-3zM24 18h2v1h-2zM29 18h2v1h-2zM33 18h3v1h-3zM4 19h4v1h-4zM9 19h1v1h-1zM11 19h4v1h-4zM18 19h2v1h-2zM22 19h1v1h-1zM24 19h3v1h-3zM28 19h3v1h-3zM32 19h3v1h-3zM5 20h3v1h-3zM9 20h4v1h-4zM14 20h1v1h-1zM17 20h1v1h-1zM19 20h1v1h-1zM21 20h1v1h-1zM23 20h1v1h-1zM26 20h1v1h-1zM28 20h2v1h-2zM31 20h2v1h-2zM36 20h1v1h-1zM5 21h1v1h-1zM7 21h3v1h-3zM14 21h5v1h-5zM20 21h1v1h-1zM22 21h2v1h-2zM27 21h1v1h-1zM29 21h3v1h-3zM33 21h4v1h-4zM4 22h1v1h-1zM6 22h3v1h-3zM10 22h3v1h-3zM14 22h3v1h-3zM18 22h2v1h-2zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h5v1h-5zM34 22h2v1h-2zM4 23h3v1h-3zM11 23h2v1h-2zM14 23h1v1h-1zM17 23h1v1h-1zM20 23h1v1h-1zM25 23h1v1h-1zM29 23h7v1h-7zM4 24h3v1h-3zM9 24h2v1h-2zM16 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM28 24h2v1h-2zM31 24h3v1h-3zM4 25h1v1h-1zM8 25h2v1h-2zM11 25h1v1h-1zM14 25h1v1h-1zM17 25h5v1h-5zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h1v1h-1zM29 25h3v1h-3zM33 25h2v1h-2zM36 25h1v1h-1zM4 26h1v1h-1zM6 26h3v1h-3zM10 26h1v1h-1zM12 26h2v1h-2zM17 26h1v1h-1zM22 26h1v1h-1zM24 26h2v1h-2zM33 26h1v1h-1zM35 26h1v1h-1zM4 27h1v1h-1zM6 27h2v1h-2zM15 27h1v1h-1zM20 27h1v1h-1zM22 27h9v1h-9zM33 27h3v1h-3zM4 28h1v1h-1zM6 28h2v1h-2zM10 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM26 28h1v1h-1zM28 28h5v1h-5zM35 28h1v1h-1zM12 29h3v1h-3zM16 29h2v1h-2zM21 29h1v1h-1zM23 29h3v1h-3zM27 29h2v1h-2zM32 29h1v1h-1zM34 29h1v1h-1zM36 29h1v1h-1zM4 30h7v1h-7zM14 30h3v1h-3zM19 30h1v1h-1zM21 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h2v1h-2zM4 31h1v1h-1zM10 31h1v1h-1zM12 31h2v1h-2zM16 31h1v1h-1zM21 31h2v1h-2zM25 31h4v1h-4zM32 31h5v1h-5zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h3v1h-3zM16 32h2v1h-2zM19 32h2v1h-2zM26 32h1v1h-1zM28 32h6v1h-6zM36 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM12 33h1v1h-1zM15 33h1v1h-1zM17 33h1v1h-1zM19 33h1v1h-1zM22 33h4v1h-4zM27 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM12 34h2v1h-2zM17 34h1v1h-1zM19 34h2v1h-2zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h2v1h-2zM33 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM15 35h2v1h-2zM19 35h1v1h-1zM23 35h5v1h-5zM29 35h1v1h-1zM32 35h3v1h-3zM4 36h7v1h-7zM12 36h2v1h-2zM15 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM21 36h1v1h-1zM23 36h1v1h-1zM26 36h4v1h-4zM31 36h1v1h-1zM35 36h1v1h-1z\"/></svg>", "ko": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 41 41\" shape-rendering=\"crispEdges\" role=\"img\" aria-label=\"QR\"><rect width=\"41\" height=\"41\" fill=\"#fff\"/><path fill=\"#000\" d=\"M4 4h7v1h-7zM13 4h1v1h-1zM21 4h4v1h-4zM27 4h2v1h-2zM30 4h7v1h-7zM4 5h1v1h-1zM10 5h1v1h-1zM13 5h2v1h-2zM19 5h3v1h-3zM24 5h1v1h-1zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM4 6h1v1h-1zM6 6h3v1h-3zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h3v1h-3zM18 6h1v1h-1zM20 6h1v1h-1zM23 6h4v1h-4zM30 6h1v1h-1zM32 6h3v1h-3zM36 6h1v1h-1zM4 7h1v1h-1zM6 7h3v1h-3zM10 7h1v1h-1zM12 7h1v1h-1zM16 7h1v1h-1zM22 7h1v1h-1zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM4 8h1v1h-1zM6 8h3v1h-3zM10 8h1v1h-1zM12 8h1v1h-1zM16 8h9v1h-9zM26 8h3v1h-3zM30 8h1v1h-1zM32 8h3v1h-3zM36 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM15 9h4v1h-4zM22 9h1v1h-1zM24 9h3v1h-3zM30 9h1v1h-1zM36 9h1v1h-1zM4 10h7v1h-7zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h7v1h-7zM12 11h5v1h-5zM18 11h1v1h-1zM20 11h1v1h-1zM23 11h1v1h-1zM25 11h2v1h-2zM28 11h1v1h-1zM4 12h1v1h-1zM6 12h5v1h-5zM13 12h2v1h-2zM16 12h3v1h-3zM21 12h1v1h-1zM23 12h1v1h-1zM26 12h2v1h-2zM30 12h5v1h-5zM4 13h2v1h-2zM7 13h3v1h-3zM12 13h1v1h-1zM16 13h2v1h-2zM20 13h2v1h-2zM23 13h2v1h-2zM27 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h1v1h-1zM4 14h1v1h-1zM6 14h2v1h-2zM10 14h2v1h-2zM13 14h1v1h-1zM17 14h5v1h-5zM26 14h1v1h-1zM32 14h1v1h-1zM34 14h2v1h-2zM6 15h1v1h-1zM8 15h1v1h-1zM13 15h1v1h-1zM16 15h2v1h-2zM19 15h1v1h-1zM21 15h7v1h-7zM30 15h1v1h-1zM32 15h5v1h-5zM5 16h2v1h-2zM8 16h1v1h-1zM10 16h1v1h-1zM12 16h1v1h-1zM14 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM26 16h4v1h-4zM31 16h3v1h-3zM35 16h1v1h-1zM8 17h2v1h-2zM11 17h3v1h-3zM15 17h3v1h-3zM19 17h1v1h-1zM22 17h4v1h-4zM27 17h1v1h-1zM30 17h1v1h-1zM34 17h3v1h-3zM5 18h1v1h-1zM10 18h2v1h-2zM14 18h2v1h-2zM18 18h3v1h-3zM24 18h2v1h-2zM29 18h2v1h-2zM33 18h3v1h-3zM4 19h2v1h-2zM7 19h1v1h-1zM9 19h1v1h-1zM11 19h6v1h-6zM18 19h2v1h-2zM22 19h1v1h-1zM24 19h3v1h-3zM28 19h3v1h-3zM32 19h3v1h-3zM5 20h3v1h-3zM9 20h2v1h-2zM12 20h1v1h-1zM14 20h2v1h-2zM17 20h1v1h-1zM19 20h1v1h-1zM21 20h1v1h-1zM23 20h1v1h-1zM26 20h1v1h-1zM28 20h2v1h-2zM31 20h2v1h-2zM36 20h1v1h-1zM5 21h1v1h-1zM7 21h1v1h-1zM9 21h1v1h-1zM13 21h4v1h-4zM18 21h1v1h-1zM20 21h1v1h-1zM22 21h2v1h-2zM27 21h1v1h-1zM29 21h3v1h-3zM33 21h4v1h-4zM4 22h5v1h-5zM10 22h3v1h-3zM15 22h2v1h-2zM19 22h1v1h-1zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h5v1h-5zM34 22h2v1h-2zM4 23h3v1h-3zM11 23h2v1h-2zM18 23h1v1h-1zM20 23h1v1h-1zM25 23h1v1h-1zM29 23h7v1h-7zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h2v1h-2zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM28 24h2v1h-2zM31 24h3v1h-3zM4 25h2v1h-2zM7 25h3v1h-3zM12 25h1v1h-1zM16 25h6v1h-6zM23 25h1v1h-1zM25 25h1v1h-1zM27 25h1v1h-1zM29 25h3v1h-3zM33 25h2v1h-2zM36 25h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM10 26h4v1h-4zM17 26h1v1h-1zM22 26h1v1h-1zM24 26h2v1h-2zM33 26h1v1h-1zM35 26h1v1h-1zM4 27h1v1h-1zM12 27h1v1h-1zM15 27h1v1h-1zM20 27h1v1h-1zM22 27h9v1h-9zM33 27h3v1h-3zM4 28h1v1h-1zM6 28h2v1h-2zM10 28h3v1h-3zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM26 28h1v1h-1zM28 28h5v1h-5zM35 28h1v1h-1zM12 29h3v1h-3zM16 29h2v1h-2zM21 29h1v1h-1zM23 29h3v1h-3zM27 29h2v1h-2zM32 29h1v1h-1zM34 29h1v1h-1zM36 29h1v1h-1zM4 30h7v1h-7zM14 30h3v1h-3zM19 30h1v1h-1zM21 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h1v1h-1zM32 30h1v1h-1zM34 30h2v1h-2zM4 31h1v1h-1zM10 31h1v1h-1zM12 31h3v1h-3zM16 31h3v1h-3zM21 31h2v1h-2zM25 31h4v1h-4zM32 31h5v1h-5zM4 32h1v1h-1zM6 32h3v1h-3zM10 32h1v1h-1zM12 32h1v1h-1zM14 32h1v1h-1zM19 32h2v1h-2zM26 32h1v1h-1zM28 32h6v1h-6zM36 32h1v1h-1zM4 33h1v1h-1zM6 33h3v1h-3zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h2v1h-2zM17 33h3v1h-3zM22 33h4v1h-4zM27 33h3v1h-3zM32 33h2v1h-2zM35 33h2v1h-2zM4 34h1v1h-1zM6 34h3v1h-3zM10 34h1v1h-1zM12 34h2v1h-2zM15 34h3v1h-3zM19 34h2v1h-2zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h2v1h-2zM33 34h1v1h-1zM4 35h1v1h-1zM10 35h1v1h-1zM15 35h2v1h-2zM19 35h1v1h-1zM23 35h5v1h-5zM29 35h1v1h-1zM32 35h3v1h-3zM4 36h7v1h-7zM12 36h2v1h-2zM15 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM21 36h1v1h-1zM23 36h1v1h-1zM26 36h4v1h-4zM31 36h1v1h-1zM35 36h1v1h-1z\"/></svg>"};
+</script>
+<script>
+// 画面の言葉。キーは全部の言語にそろえる（qa/run.mjs が抜けを見る）。
+// ja が元。easy（やさしい日本語）・en・zh・ko は AI が訳したもので、人の確認はまだ（画面にもそう出す）。
+window.LANGS = [
+  ["ja", "日本語"], ["easy", "やさしい にほんご"], ["en", "English"], ["zh", "中文"], ["ko", "한국어"],
+];
+window.T = {
+  ja: {
+    title: "川越 避難ガイド",
+    sub: "川越市にいる人のための防災ページ（非公式）",
+    saved: "この端末に保存しました。電波がなくても開けます。",
+    notSaved: "まだ保存できていません。電波のあるうちに一度開いておいてください。",
+    offline: "いまは電波がありません。保存した情報を表示しています。",
+    tabNear: "近くの避難場所", tabDo: "そのときすること", tabTalk: "指さし会話", tabInfo: "連絡・情報",
+    whatHappen: "何が起きていますか？",
+    hzQuake: "地震", hzFlood: "大雨・洪水", hzFire: "火事",
+    whereAreYou: "いまどこにいますか？",
+    useGps: "現在地を使う（電波がなくても使えます）",
+    gpsWait: "現在地を調べています…",
+    gpsFail: "現在地がわかりませんでした。下の場所から近いものを選んでください。",
+    gpsOk: "現在地から近い順です。",
+    orPick: "または、近い場所を選ぶ：",
+    nearest: "近い順",
+    meters: "m", km: "km",
+    floorUp: "{n}階以上へ",
+    shelterMark: "避難所（泊まれる）",
+    noFireSite: "川越市には「大規模な火事」用の指定はありません。火から離れ、広い場所（地震用の避難場所）へ。119番に通報してください。",
+    floodNote: "大雨のときは、川や用水路に近づかないでください。外が危ないときは、近くの丈夫な建物の高い階へ。",
+    openMap: "地図アプリで開く（電波が必要）",
+    compass: "方位磁石を使う",
+    compassOn: "スマホの上が向いている方角に合わせて矢印が動きます。",
+    compassNo: "この端末では方位磁石を使えません。",
+    dirN: "北", dirNE: "北東", dirE: "東", dirSE: "南東", dirS: "南", dirSW: "南西", dirW: "西", dirNW: "北西",
+    mapNote: "上が北。点の数字は上の一覧の番号です。",
+    youHere: "あなた",
+    doQuakeT: "地震のとき",
+    doQuake: [
+      "まず頭を守り、ゆれがおさまるまで動かない。",
+      "古い建物、ブロック塀、瓦、看板、ガラスから離れる。一番街などの古い町なみでは特に気をつける。",
+      "ゆれがおさまったら、火を消し、ドアを開けて出口を確保する。",
+      "電車が止まったら、無理に歩いて帰らない。駅や近くの一時滞在施設の案内に従う。",
+    ],
+    doFloodT: "大雨・洪水のとき",
+    doFlood: [
+      "「警戒レベル4（避難指示）」が出たら、危ない場所にいる人は全員避難する。",
+      "川（入間川・荒川・新河岸川など）や用水路を見に行かない。",
+      "水が来て外に出るのが危ないときは、近くの丈夫な建物の2階以上へ。",
+      "車での移動は、道路が水につかるととても危ない。",
+    ],
+    doFireT: "火事のとき",
+    doFire: [
+      "大きな声で知らせ、119番に通報する。",
+      "煙を吸わないよう、ハンカチなどで口と鼻をおおい、低い姿勢で逃げる。",
+      "一度逃げたら、物を取りに戻らない。",
+    ],
+    talkHint: "相手に画面を見せてください。",
+    talk: [
+      ["避難所はどこですか？", "hinan"],
+      ["けがをしています。", "kega"],
+      ["救急車を呼んでください。", "kyukyu"],
+      ["水がほしいです。", "mizu"],
+      ["日本語がわかりません。", "nihongo"],
+      ["駅はどこですか？", "eki"],
+      ["電話を貸してください。", "denwa"],
+      ["トイレはどこですか？", "toire"],
+    ],
+    callT: "電話",
+    call119: "119：火事・救急",
+    call110: "110：事件・事故（警察）",
+    call171: "171：災害用伝言ダイヤル（家族に無事を伝える）",
+    wifiT: "無料Wi-Fi「00000JAPAN」",
+    wifi: "大きな災害のとき、携帯電話会社などがWi-Fiを無料で開放します。Wi-Fiの一覧に「00000JAPAN」があれば、パスワードなしでつなげます。大事な情報（パスワードなど）は入力しないでください。",
+    linksT: "公式の情報（電波が必要）",
+    lnCity: "川越市 防災情報", lnJma: "気象庁 防災情報", lnSafety: "観光庁 Safety tips（多言語の通知アプリ）", lnHinan: "川越市 避難場所一覧",
+    keepT: "電波がなくても使うために",
+    keepIos: "iPhone：Safariの共有ボタン → 「ホーム画面に追加」。追加しないと、しばらく使わないうちに保存が消えることがあります。",
+    keepAndroid: "Android：Chromeのメニュー → 「ホーム画面に追加」または「アプリをインストール」。",
+    shareT: "人に渡す",
+    qrSheet: "場所ごとの掲示用ポスター（印刷用）",
+    aboutT: "このページについて",
+    about1: "川越市・国土地理院の公開データをもとに個人が作った非公式のページです。公式の情報の代わりにはなりません。",
+    about2: "避難場所の情報は最新でないことがあります。最新の状況は必ず川越市で確かめてください。",
+    about3: "避難場所は災害の種類ごとに決まっています。「指定緊急避難場所」は命を守るためにすぐ逃げる場所、「指定避難所」は家に住めなくなった人が過ごす場所です。",
+    about4: "日本語以外の言葉はAIが訳したもので、まだ人の確認をしていません。",
+    dataDate: "データ：国土地理院 {gsi} 更新分・川越市 {city} 更新",
+    tabShare: "みんなに配る",
+    give: "📤 このアプリをまわりの人に配る",
+    shareLead: "このアプリは、電波がなくても人から人へ渡せます。渡された人も、また別の人へ渡せます。",
+    shareOnlineT: "① 電波があるとき：QRを見せる",
+    shareOnline: "相手のスマホのカメラでこのQRを読んでもらいます。開くだけで保存され、次からは電波がなくても使えます。",
+    shareOfflineT: "② 電波がないとき：ファイルで渡す",
+    shareOffline: "AirDrop（iPhone）やクイック共有（Android）で、インターネットなしで送れます。",
+    shareFileBtn: "ファイルで渡す（AirDrop・クイック共有）",
+    shareFileSaved: "この端末では直接送れないため、ファイルを保存しました。「ファイル」アプリから共有してください。",
+    shareCount: "これまでに {n} 回 配りました。",
+    routeBtn: "道順",
+    routeT: "{name} までの道順",
+    routeWalk: "歩いて約{d}（{min}分）",
+    routeLoading: "道を探しています…",
+    routeNone: "この画面には道のデータがないため、方角と直線の距離だけ出しています。電波のあるときに一度アプリを開くと、道順も保存されます。",
+    routeFar: "いる場所が道のデータから{d}はなれています。近くの道に出てから使ってください。",
+    routeAvoid: "なるべく避けた所：{list}",
+    routeStill: "この道でも通る所：{list}。気をつけて進んでください。",
+    routeNote: "浸水・土砂の区域は「想定」です。いまの通行止め・がれき・水の深さは分かりません。目で見て危なければ、引き返して別の道へ。",
+    routeSrc: "道：国土地理院 ベクトルタイル。浸水・家屋倒壊・土砂災害の区域：国土数値情報（国土交通省、洪水浸水想定区域 2024・土砂災害警戒区域 2024）。",
+    routeMapNote: "上が北。赤い太線が道順、●が出発、■が着く所。青い道は、いまの災害で避けたい道。",
+    stepTurn: "{d} 進んで {turn}",
+    stepEnd: "{d} 進むと着きます",
+    turnR: "右へ",
+    turnL: "左へ",
+    hBridge: "橋",
+    hTunnel: "地下道・トンネル",
+    hStairs: "階段",
+    hNarrow: "細い道（幅3m未満）",
+    hRiver: "川・水路のそば",
+    hFlood: "浸水想定0.5〜3m",
+    hDeep: "浸水想定3m以上",
+    hCollapse: "家が流されるおそれのある区域",
+    hSlope: "土砂災害警戒区域",
+    recvT: "③ 受け取った人へ（この画面を見せてください）",
+    recvIos: "iPhone：AirDropで受け取る →「ファイル」アプリで kawagoe-bousai.html をタップして開く。",
+    recvAndroid: "Android：受け取ったら「ファイル」アプリで kawagoe-bousai.html を開き、Chromeを選ぶ。",
+    recvNoJs: "地図や現在地が動かない開き方でも、避難場所の一覧と電話番号は読めます。",
+    fileMode: "ファイルから開いています。電波があるときにQRのアドレスを開くと、ホーム画面に追加できます。",
+    lang: "言語",
+  },
+  easy: {
+    title: "かわごえ ひなん ガイド",
+    sub: "かわごえしに いる ひとの ための ページ（しやくしょの ページでは ありません）",
+    saved: "この スマホに ほぞんしました。でんぱが なくても ひらけます。",
+    notSaved: "まだ ほぞんできて いません。でんぱが ある ときに いちど ひらいて ください。",
+    offline: "いま でんぱが ありません。ほぞんした じょうほうを だして います。",
+    tabNear: "ちかくの ひなんばしょ", tabDo: "その とき すること", tabTalk: "ゆびさし かいわ", tabInfo: "でんわ・じょうほう",
+    whatHappen: "なにが おきて いますか？",
+    hzQuake: "じしん", hzFlood: "おおあめ・こうずい", hzFire: "かじ",
+    whereAreYou: "いま どこに いますか？",
+    useGps: "いまいる ばしょを つかう（でんぱが なくても つかえます）",
+    gpsWait: "いまいる ばしょを しらべて います…",
+    gpsFail: "いまいる ばしょが わかりません でした。したから ちかい ばしょを えらんで ください。",
+    gpsOk: "いまいる ばしょから ちかい じゅんです。",
+    orPick: "または、ちかい ばしょを えらぶ：",
+    nearest: "ちかい じゅん",
+    meters: "m", km: "km",
+    floorUp: "{n}かい より うえへ",
+    shelterMark: "ひなんじょ（とまれる）",
+    noFireSite: "かわごえしには「かじ」の ための ばしょは ありません。ひから はなれて、ひろい ばしょ（じしんの ひなんばしょ）へ。119に でんわして ください。",
+    floodNote: "おおあめの ときは、かわに ちかづかないで ください。そとが あぶない ときは、ちかくの じょうぶな たてものの うえの かいへ。",
+    openMap: "ちずアプリで ひらく（でんぱが ひつよう）",
+    compass: "ほういじしゃくを つかう",
+    compassOn: "スマホの うえが むいて いる ほうに あわせて やじるしが うごきます。",
+    compassNo: "この スマホでは ほういじしゃくを つかえません。",
+    dirN: "きた", dirNE: "きたひがし", dirE: "ひがし", dirSE: "みなみひがし", dirS: "みなみ", dirSW: "みなみにし", dirW: "にし", dirNW: "きたにし",
+    mapNote: "うえが きた です。すうじは うえの リストの ばんごう です。",
+    youHere: "あなた",
+    doQuakeT: "じしんの とき",
+    doQuake: [
+      "まず あたまを まもって、ゆれが とまるまで うごかない。",
+      "ふるい たてもの、ブロックの へい、かわら、かんばん、ガラスから はなれる。",
+      "ゆれが とまったら、ひを けして、ドアを あける。",
+      "でんしゃが とまったら、むりに あるいて かえらない。えきの あんないを きく。",
+    ],
+    doFloodT: "おおあめ・こうずいの とき",
+    doFlood: [
+      "「けいかいレベル4」が でたら、あぶない ばしょの ひとは みんな にげる。",
+      "かわを みに いかない。",
+      "そとに でるのが あぶない ときは、ちかくの じょうぶな たてものの 2かい より うえへ。",
+      "くるまで うごくのは とても あぶない。",
+    ],
+    doFireT: "かじの とき",
+    doFire: [
+      "おおきな こえで しらせて、119に でんわする。",
+      "けむりを すわないように、くちと はなを おおって、ひくい しせいで にげる。",
+      "にげたら、ものを とりに もどらない。",
+    ],
+    talkHint: "あいてに がめんを みせて ください。",
+    talk: [
+      ["ひなんじょは どこですか？", "hinan"],
+      ["けがを して います。", "kega"],
+      ["きゅうきゅうしゃを よんで ください。", "kyukyu"],
+      ["みずが ほしいです。", "mizu"],
+      ["にほんごが わかりません。", "nihongo"],
+      ["えきは どこですか？", "eki"],
+      ["でんわを かして ください。", "denwa"],
+      ["トイレは どこですか？", "toire"],
+    ],
+    callT: "でんわ",
+    call119: "119：かじ・きゅうきゅうしゃ",
+    call110: "110：けいさつ",
+    call171: "171：かぞくに ぶじを つたえる でんわ",
+    wifiT: "むりょうの Wi-Fi「00000JAPAN」",
+    wifi: "おおきな さいがいの とき、Wi-Fiが むりょうに なります。Wi-Fiの リストに「00000JAPAN」が あれば、パスワード なしで つなげます。だいじな じょうほうは いれないで ください。",
+    linksT: "しやくしょなどの じょうほう（でんぱが ひつよう）",
+    lnCity: "かわごえし ぼうさい じょうほう", lnJma: "きしょうちょう", lnSafety: "Safety tips（いろいろな ことばの アプリ）", lnHinan: "かわごえし ひなんばしょ リスト",
+    keepT: "でんぱが なくても つかう ために",
+    keepIos: "iPhone：Safariの きょうゆう ボタン →「ホーム画面に追加」。しないと、ほぞんが きえる ことが あります。",
+    keepAndroid: "Android：Chromeの メニュー →「ホーム画面に追加」。",
+    shareT: "ひとに わたす",
+    qrSheet: "ばしょごとの はりがみ（いんさつよう）",
+    aboutT: "この ページに ついて",
+    about1: "しやくしょの ページでは ありません。こじんが つくりました。",
+    about2: "じょうほうが あたらしく ない ことが あります。かわごえしで たしかめて ください。",
+    about3: "ひなんばしょは さいがいの しゅるいで ちがいます。",
+    about4: "この ことばは AIが つくりました。ひとは まだ たしかめて いません。",
+    dataDate: "データ：こくどちりいん {gsi}・かわごえし {city}",
+    tabShare: "みんなに くばる",
+    give: "📤 この アプリを まわりの ひとに くばる",
+    shareLead: "この アプリは、でんぱが なくても ひとから ひとへ わたせます。",
+    shareOnlineT: "① でんぱが ある とき：QRを みせる",
+    shareOnline: "あいての スマホの カメラで この QRを よんで もらいます。ひらくと ほぞんされます。",
+    shareOfflineT: "② でんぱが ない とき：ファイルで わたす",
+    shareOffline: "AirDrop（iPhone）や クイック共有（Android）で、インターネット なしで おくれます。",
+    shareFileBtn: "ファイルで わたす（AirDrop・クイック共有）",
+    shareFileSaved: "この スマホでは おくれません。ファイルを ほぞんしました。「ファイル」アプリから わたして ください。",
+    shareCount: "いままでに {n}かい くばりました。",
+    routeBtn: "みちじゅん",
+    routeT: "{name} までの みちじゅん",
+    routeWalk: "あるいて やく{d}（{min}ふん）",
+    routeLoading: "みちを さがして います…",
+    routeNone: "この がめんには みちの データが ありません。ほうがくと まっすぐの きょりだけ だして います。でんぱが ある ときに いちど アプリを ひらくと、みちじゅんも ほぞん されます。",
+    routeFar: "いる ばしょが みちの データから {d} はなれて います。ちかくの みちに でてから つかって ください。",
+    routeAvoid: "なるべく さけた ところ：{list}",
+    routeStill: "この みちでも とおる ところ：{list}。きを つけて すすんで ください。",
+    routeNote: "みずや どしゃの くいきは「よそう」です。いまの とおれない みち・がれき・みずの ふかさは わかりません。みて あぶなければ、もどって ほかの みちへ。",
+    routeSrc: "みち：こくどちりいん。みずや どしゃの くいき：こくどすうちじょうほう（こくどこうつうしょう）。",
+    routeMapNote: "うえが きた。あかい ふとい せんが みちじゅん、●が スタート、■が つく ところ。あおい みちは さけたい みち。",
+    stepTurn: "{d} すすんで {turn}",
+    stepEnd: "{d} すすむと つきます",
+    turnR: "みぎへ",
+    turnL: "ひだりへ",
+    hBridge: "はし",
+    hTunnel: "ちかどう・トンネル",
+    hStairs: "かいだん",
+    hNarrow: "ほそい みち",
+    hRiver: "かわ・すいろの そば",
+    hFlood: "みずに つかる よそう 0.5〜3m",
+    hDeep: "みずに つかる よそう 3m いじょう",
+    hCollapse: "いえが ながされる おそれの ある ところ",
+    hSlope: "どしゃさいがい けいかい くいき",
+    recvT: "③ うけとった ひとへ（この がめんを みせて ください）",
+    recvIos: "iPhone：AirDropで うけとる →「ファイル」アプリで kawagoe-bousai.html を おす。",
+    recvAndroid: "Android：「ファイル」アプリで kawagoe-bousai.html を ひらいて、Chromeを えらぶ。",
+    recvNoJs: "ちずが うごかない ときも、ひなんばしょの リストと でんわばんごうは よめます。",
+    fileMode: "ファイルから ひらいて います。でんぱが ある ときに QRの アドレスを ひらくと、ホームに ついかできます。",
+    lang: "ことば",
+  },
+  en: {
+    title: "Kawagoe Evacuation Guide",
+    sub: "Disaster safety page for people in Kawagoe City (unofficial)",
+    saved: "Saved on this device. It opens even without a signal.",
+    notSaved: "Not saved yet. Open this page once while you have a signal.",
+    offline: "No signal now. Showing the saved information.",
+    tabNear: "Nearby evacuation sites", tabDo: "What to do", tabTalk: "Point & talk", tabInfo: "Calls & info",
+    whatHappen: "What is happening?",
+    hzQuake: "Earthquake", hzFlood: "Heavy rain / Flood", hzFire: "Fire",
+    whereAreYou: "Where are you now?",
+    useGps: "Use my location (works without a signal)",
+    gpsWait: "Finding your location…",
+    gpsFail: "Could not find your location. Choose a nearby place below.",
+    gpsOk: "Sorted by distance from you.",
+    orPick: "Or choose a nearby place:",
+    nearest: "Nearest first",
+    meters: "m", km: "km",
+    floorUp: "Go to floor {n} or higher",
+    shelterMark: "Shelter (you can stay)",
+    noFireSite: "Kawagoe has no sites designated for large fires. Move away from the fire to an open area (an earthquake site). Call 119.",
+    floodNote: "In heavy rain, stay away from rivers and canals. If going outside is dangerous, go to an upper floor of a nearby sturdy building.",
+    openMap: "Open in a map app (needs a signal)",
+    compass: "Use compass",
+    compassOn: "The arrows turn to match the direction the top of your phone faces.",
+    compassNo: "Compass is not available on this device.",
+    dirN: "N", dirNE: "NE", dirE: "E", dirSE: "SE", dirS: "S", dirSW: "SW", dirW: "W", dirNW: "NW",
+    mapNote: "North is up. Numbers match the list above.",
+    youHere: "You",
+    doQuakeT: "Earthquake",
+    doQuake: [
+      "Protect your head first. Do not move until the shaking stops.",
+      "Stay away from old buildings, block walls, roof tiles, signs and glass — especially in old streets like Ichibangai.",
+      "After the shaking stops, turn off any fire and open a door to keep an exit.",
+      "If trains stop, do not try to walk home. Follow guidance at the station or a temporary shelter facility.",
+    ],
+    doFloodT: "Heavy rain / Flood",
+    doFlood: [
+      "When \"Alert Level 4 (Evacuation Instruction)\" is issued, everyone in a dangerous area must evacuate.",
+      "Do not go to look at rivers (Iruma, Arakawa, Shingashi, etc.) or canals.",
+      "If water is coming and it is dangerous to go out, go to the 2nd floor or higher of a nearby sturdy building.",
+      "Driving is very dangerous when roads are flooded.",
+    ],
+    doFireT: "Fire",
+    doFire: [
+      "Shout to warn others and call 119.",
+      "Cover your mouth and nose and stay low to avoid smoke.",
+      "Once you escape, do not go back for your things.",
+    ],
+    talkHint: "Show this screen to the other person.",
+    talk: [
+      ["Where is the evacuation shelter?", "hinan"],
+      ["I am injured.", "kega"],
+      ["Please call an ambulance.", "kyukyu"],
+      ["I need water.", "mizu"],
+      ["I don't understand Japanese.", "nihongo"],
+      ["Where is the station?", "eki"],
+      ["May I use your phone?", "denwa"],
+      ["Where is the toilet?", "toire"],
+    ],
+    callT: "Phone",
+    call119: "119: Fire / Ambulance",
+    call110: "110: Police",
+    call171: "171: Disaster message dial (tell family you are safe)",
+    wifiT: "Free Wi-Fi \"00000JAPAN\"",
+    wifi: "In a major disaster, mobile carriers and others open free Wi-Fi. If you see \"00000JAPAN\" in your Wi-Fi list, you can connect without a password. Do not enter important information such as passwords.",
+    linksT: "Official information (needs a signal)",
+    lnCity: "Kawagoe City disaster info", lnJma: "Japan Meteorological Agency", lnSafety: "Safety tips app (Japan Tourism Agency, multilingual alerts)", lnHinan: "Kawagoe City evacuation site list",
+    keepT: "To use it without a signal",
+    keepIos: "iPhone: Safari Share button → \"Add to Home Screen\". Otherwise the saved data may be deleted after a while.",
+    keepAndroid: "Android: Chrome menu → \"Add to Home screen\" or \"Install app\".",
+    shareT: "Share with others",
+    qrSheet: "Printable posters for each place",
+    aboutT: "About this page",
+    about1: "An unofficial page made by an individual from open data of Kawagoe City and the Geospatial Information Authority of Japan. It does not replace official information.",
+    about2: "Site information may be out of date. Always check the latest status with Kawagoe City.",
+    about3: "Evacuation sites are designated for each type of disaster. \"Designated emergency evacuation sites\" are places to flee to save your life; \"designated shelters\" are where people who cannot stay home live for a while.",
+    about4: "Languages other than Japanese were translated by AI and have not yet been checked by a person.",
+    dataDate: "Data: GSI (updated {gsi}), Kawagoe City (updated {city})",
+    tabShare: "Share",
+    give: "📤 Give this app to people around you",
+    shareLead: "You can pass this app from person to person, even without a signal. People who receive it can pass it on too.",
+    shareOnlineT: "① With a signal: show the QR code",
+    shareOnline: "Let the other person scan this QR code with their camera. Opening it once saves the app, so it works offline afterwards.",
+    shareOfflineT: "② Without a signal: send as a file",
+    shareOffline: "Send it with AirDrop (iPhone) or Quick Share (Android) — no internet needed.",
+    shareFileBtn: "Send as a file (AirDrop / Quick Share)",
+    shareFileSaved: "This device cannot send it directly, so the file was saved. Share it from your Files app.",
+    shareCount: "You have shared it {n} times.",
+    routeBtn: "Route",
+    routeT: "Route to {name}",
+    routeWalk: "About {d} on foot ({min} min)",
+    routeLoading: "Finding a route…",
+    routeNone: "Road data is not available on this screen, so only the direction and straight-line distance are shown. Open the app once while online to save routes too.",
+    routeFar: "You are {d} away from the road data. Move to a nearby road first.",
+    routeAvoid: "Avoided where possible: {list}",
+    routeStill: "This route still passes: {list}. Take care.",
+    routeNote: "Flood and landslide areas are forecasts. Current closures, debris and water depth are unknown. If it looks dangerous, turn back and take another road.",
+    routeSrc: "Roads: GSI Japan vector tiles. Flood, house-collapse and landslide areas: National Land Numerical Information (MLIT), 2024.",
+    routeMapNote: "North is up. Thick red line: route. ●: start. ■: destination. Blue roads: roads to avoid in this disaster.",
+    stepTurn: "Go {d}, then turn {turn}",
+    stepEnd: "Go {d} to arrive",
+    turnR: "right",
+    turnL: "left",
+    hBridge: "bridges",
+    hTunnel: "underpasses and tunnels",
+    hStairs: "stairs",
+    hNarrow: "narrow roads (under 3 m)",
+    hRiver: "riversides and canals",
+    hFlood: "flood forecast 0.5–3 m",
+    hDeep: "flood forecast 3 m+",
+    hCollapse: "areas where houses may be swept away",
+    hSlope: "landslide warning areas",
+    recvT: "③ For the person receiving (show them this screen)",
+    recvIos: "iPhone: accept the AirDrop → in the Files app, tap kawagoe-bousai.html to open it.",
+    recvAndroid: "Android: after receiving, open kawagoe-bousai.html in the Files app and choose Chrome.",
+    recvNoJs: "Even if the map and location do not work, the list of sites and phone numbers can still be read.",
+    fileMode: "Opened from a file. When you have a signal, open the address in the QR code to add it to your home screen.",
+    lang: "Language",
+  },
+  zh: {
+    title: "川越 避难指南",
+    sub: "为身在川越市的人准备的防灾页面（非官方）",
+    saved: "已保存到本设备。没有信号也能打开。",
+    notSaved: "尚未保存。请在有信号时先打开一次本页。",
+    offline: "现在没有信号。正在显示已保存的信息。",
+    tabNear: "附近的避难场所", tabDo: "发生时怎么做", tabTalk: "指着说", tabInfo: "电话・信息",
+    whatHappen: "发生了什么？",
+    hzQuake: "地震", hzFlood: "暴雨・洪水", hzFire: "火灾",
+    whereAreYou: "你现在在哪里？",
+    useGps: "使用当前位置（没有信号也能用）",
+    gpsWait: "正在查找当前位置…",
+    gpsFail: "无法获取当前位置。请从下面选择附近的地点。",
+    gpsOk: "按离你的距离排序。",
+    orPick: "或者选择附近的地点：",
+    nearest: "由近到远",
+    meters: "米", km: "公里",
+    floorUp: "请到{n}楼或更高",
+    shelterMark: "避难所（可以留宿）",
+    noFireSite: "川越市没有针对大规模火灾指定的场所。请远离火源，前往开阔的地方（地震用避难场所），并拨打119。",
+    floodNote: "暴雨时请不要靠近河流和水渠。如果外出危险，请到附近坚固建筑物的高层。",
+    openMap: "用地图应用打开（需要信号）",
+    compass: "使用指南针",
+    compassOn: "箭头会随手机顶部朝向的方向转动。",
+    compassNo: "本设备无法使用指南针。",
+    dirN: "北", dirNE: "东北", dirE: "东", dirSE: "东南", dirS: "南", dirSW: "西南", dirW: "西", dirNW: "西北",
+    mapNote: "上方为北。数字与上面列表的编号对应。",
+    youHere: "你",
+    doQuakeT: "地震时",
+    doQuake: [
+      "首先保护头部，摇晃停止前不要移动。",
+      "远离老旧建筑、砖墙、屋瓦、招牌和玻璃，在一番街等老街区尤其要注意。",
+      "摇晃停止后，关掉火源，打开门确保出口。",
+      "电车停运时，不要勉强步行回家。请听从车站或临时滞留设施的指引。",
+    ],
+    doFloodT: "暴雨・洪水时",
+    doFlood: [
+      "发布“警戒等级4（避难指示）”时，处于危险区域的人必须全部避难。",
+      "不要去看河流（入间川、荒川、新河岸川等）或水渠。",
+      "如果水已涌来、外出危险，请到附近坚固建筑物的2楼或更高。",
+      "道路被淹时开车非常危险。",
+    ],
+    doFireT: "火灾时",
+    doFire: [
+      "大声呼喊提醒他人，并拨打119。",
+      "用手帕等捂住口鼻，压低身体逃生，避免吸入烟雾。",
+      "逃出后不要返回取东西。",
+    ],
+    talkHint: "请把屏幕给对方看。",
+    talk: [
+      ["避难所在哪里？", "hinan"],
+      ["我受伤了。", "kega"],
+      ["请叫救护车。", "kyukyu"],
+      ["我需要水。", "mizu"],
+      ["我不懂日语。", "nihongo"],
+      ["车站在哪里？", "eki"],
+      ["可以借用一下电话吗？", "denwa"],
+      ["厕所在哪里？", "toire"],
+    ],
+    callT: "电话",
+    call119: "119：火灾・急救",
+    call110: "110：警察",
+    call171: "171：灾害留言电话（告诉家人你平安）",
+    wifiT: "免费Wi-Fi“00000JAPAN”",
+    wifi: "发生大灾害时，手机运营商等会免费开放Wi-Fi。如果Wi-Fi列表中有“00000JAPAN”，无需密码即可连接。请不要输入密码等重要信息。",
+    linksT: "官方信息（需要信号）",
+    lnCity: "川越市 防灾信息", lnJma: "日本气象厅", lnSafety: "Safety tips（观光厅的多语言通知应用）", lnHinan: "川越市 避难场所一览",
+    keepT: "为了没有信号也能使用",
+    keepIos: "iPhone：Safari的分享按钮 →“添加到主屏幕”。不添加的话，一段时间不用后保存的数据可能会被删除。",
+    keepAndroid: "Android：Chrome菜单 →“添加到主屏幕”或“安装应用”。",
+    shareT: "分享给他人",
+    qrSheet: "各地点的张贴海报（打印用）",
+    aboutT: "关于本页",
+    about1: "这是个人根据川越市和国土地理院的公开数据制作的非官方页面，不能代替官方信息。",
+    about2: "避难场所的信息可能不是最新的。请务必向川越市确认最新情况。",
+    about3: "避难场所按灾害种类指定。“指定紧急避难场所”是为保护生命而紧急逃往的地方，“指定避难所”是无法住在家里的人暂时生活的地方。",
+    about4: "日语以外的语言由AI翻译，尚未经过人工确认。",
+    dataDate: "数据：国土地理院（{gsi}更新）・川越市（{city}更新）",
+    tabShare: "分享给大家",
+    give: "📤 把这个应用分享给身边的人",
+    shareLead: "即使没有信号，这个应用也可以在人与人之间传递。收到的人也可以再传给别人。",
+    shareOnlineT: "① 有信号时：出示二维码",
+    shareOnline: "请对方用手机相机扫描这个二维码。打开一次就会保存，之后没有信号也能使用。",
+    shareOfflineT: "② 没有信号时：用文件传送",
+    shareOffline: "可以用AirDrop（iPhone）或快速分享（Android）发送，不需要网络。",
+    shareFileBtn: "用文件传送（AirDrop・快速分享）",
+    shareFileSaved: "本设备无法直接发送，已保存文件。请从“文件”应用分享。",
+    shareCount: "你已经分享了 {n} 次。",
+    routeBtn: "路线",
+    routeT: "前往 {name} 的路线",
+    routeWalk: "步行约 {d}（{min} 分钟）",
+    routeLoading: "正在查找路线…",
+    routeNone: "此画面没有道路数据，只显示方向和直线距离。请在有信号时打开一次应用，路线也会被保存。",
+    routeFar: "你所在的位置距离道路数据 {d}。请先走到附近的道路上。",
+    routeAvoid: "尽量避开了：{list}",
+    routeStill: "这条路线仍会经过：{list}。请注意安全。",
+    routeNote: "浸水和土石流区域只是预测。无法得知当前的封路、瓦砾和水深。看到危险请返回，改走其他道路。",
+    routeSrc: "道路：日本国土地理院 矢量瓦片。浸水、房屋倒塌、土石流区域：国土数值信息（国土交通省，2024）。",
+    routeMapNote: "上方为北。红色粗线为路线，●为出发点，■为目的地。蓝色道路是此次灾害中应避开的道路。",
+    stepTurn: "前进 {d}，然后{turn}",
+    stepEnd: "前进 {d} 即到达",
+    turnR: "右转",
+    turnL: "左转",
+    hBridge: "桥",
+    hTunnel: "地下通道・隧道",
+    hStairs: "台阶",
+    hNarrow: "窄路（不足3米）",
+    hRiver: "河流・水渠旁",
+    hFlood: "预计浸水0.5〜3米",
+    hDeep: "预计浸水3米以上",
+    hCollapse: "房屋可能被冲走的区域",
+    hSlope: "土石流警戒区域",
+    recvT: "③ 给收到的人（请出示这个画面）",
+    recvIos: "iPhone：接收AirDrop → 在“文件”应用中点击 kawagoe-bousai.html 打开。",
+    recvAndroid: "Android：收到后在“文件”应用中打开 kawagoe-bousai.html，选择Chrome。",
+    recvNoJs: "即使地图和定位无法使用，也能看到避难场所列表和电话号码。",
+    fileMode: "正在从文件打开。有信号时打开二维码中的地址，就可以添加到主屏幕。",
+    lang: "语言",
+  },
+  ko: {
+    title: "가와고에 대피 가이드",
+    sub: "가와고에시에 있는 사람을 위한 방재 페이지(비공식)",
+    saved: "이 기기에 저장했습니다. 신호가 없어도 열 수 있습니다.",
+    notSaved: "아직 저장되지 않았습니다. 신호가 있을 때 이 페이지를 한 번 열어 두세요.",
+    offline: "지금은 신호가 없습니다. 저장된 정보를 표시합니다.",
+    tabNear: "가까운 대피 장소", tabDo: "그때 할 일", tabTalk: "가리키며 말하기", tabInfo: "전화・정보",
+    whatHappen: "무슨 일이 일어났나요?",
+    hzQuake: "지진", hzFlood: "폭우・홍수", hzFire: "화재",
+    whereAreYou: "지금 어디에 있나요?",
+    useGps: "현재 위치 사용(신호가 없어도 됩니다)",
+    gpsWait: "현재 위치를 찾고 있습니다…",
+    gpsFail: "현재 위치를 알 수 없습니다. 아래에서 가까운 장소를 고르세요.",
+    gpsOk: "현재 위치에서 가까운 순서입니다.",
+    orPick: "또는 가까운 장소를 고르세요:",
+    nearest: "가까운 순",
+    meters: "m", km: "km",
+    floorUp: "{n}층 이상으로",
+    shelterMark: "대피소(머물 수 있음)",
+    noFireSite: "가와고에시에는 대형 화재용으로 지정된 장소가 없습니다. 불에서 멀리 떨어져 넓은 장소(지진용 대피 장소)로 가세요. 119에 신고하세요.",
+    floodNote: "폭우 때는 강이나 수로에 가까이 가지 마세요. 밖이 위험하면 가까운 튼튼한 건물의 높은 층으로 가세요.",
+    openMap: "지도 앱으로 열기(신호 필요)",
+    compass: "나침반 사용",
+    compassOn: "휴대폰 위쪽이 향하는 방향에 맞춰 화살표가 움직입니다.",
+    compassNo: "이 기기에서는 나침반을 사용할 수 없습니다.",
+    dirN: "북", dirNE: "북동", dirE: "동", dirSE: "남동", dirS: "남", dirSW: "남서", dirW: "서", dirNW: "북서",
+    mapNote: "위쪽이 북쪽입니다. 숫자는 위 목록의 번호입니다.",
+    youHere: "나",
+    doQuakeT: "지진 때",
+    doQuake: [
+      "먼저 머리를 보호하고, 흔들림이 멈출 때까지 움직이지 마세요.",
+      "오래된 건물, 블록 담, 기와, 간판, 유리에서 떨어지세요. 이치방가이 같은 옛 거리에서는 특히 조심하세요.",
+      "흔들림이 멈추면 불을 끄고 문을 열어 출구를 확보하세요.",
+      "전철이 멈추면 무리하게 걸어서 돌아가지 마세요. 역이나 일시 체류 시설의 안내를 따르세요.",
+    ],
+    doFloodT: "폭우・홍수 때",
+    doFlood: [
+      "\"경계 레벨 4(피난 지시)\"가 나오면 위험한 장소에 있는 사람은 모두 대피합니다.",
+      "강(이루마강・아라카와강・신가시강 등)이나 수로를 보러 가지 마세요.",
+      "물이 밀려와 밖에 나가기 위험하면 가까운 튼튼한 건물의 2층 이상으로 가세요.",
+      "도로가 물에 잠겼을 때 차로 이동하는 것은 매우 위험합니다.",
+    ],
+    doFireT: "화재 때",
+    doFire: [
+      "큰 소리로 알리고 119에 신고하세요.",
+      "손수건 등으로 입과 코를 막고 낮은 자세로 대피해 연기를 마시지 마세요.",
+      "한 번 대피하면 물건을 가지러 돌아가지 마세요.",
+    ],
+    talkHint: "상대방에게 화면을 보여 주세요.",
+    talk: [
+      ["대피소는 어디인가요?", "hinan"],
+      ["다쳤습니다.", "kega"],
+      ["구급차를 불러 주세요.", "kyukyu"],
+      ["물이 필요합니다.", "mizu"],
+      ["일본어를 모릅니다.", "nihongo"],
+      ["역은 어디인가요?", "eki"],
+      ["전화를 빌려 주세요.", "denwa"],
+      ["화장실은 어디인가요?", "toire"],
+    ],
+    callT: "전화",
+    call119: "119: 화재・구급",
+    call110: "110: 경찰",
+    call171: "171: 재해용 전언 다이얼(가족에게 무사함을 알림)",
+    wifiT: "무료 Wi-Fi \"00000JAPAN\"",
+    wifi: "큰 재해 때는 휴대폰 회사 등이 Wi-Fi를 무료로 개방합니다. Wi-Fi 목록에 \"00000JAPAN\"이 있으면 비밀번호 없이 연결할 수 있습니다. 비밀번호 등 중요한 정보는 입력하지 마세요.",
+    linksT: "공식 정보(신호 필요)",
+    lnCity: "가와고에시 방재 정보", lnJma: "일본 기상청", lnSafety: "Safety tips(관광청의 다국어 알림 앱)", lnHinan: "가와고에시 대피 장소 목록",
+    keepT: "신호 없이 쓰려면",
+    keepIos: "iPhone: Safari 공유 버튼 → \"홈 화면에 추가\". 추가하지 않으면 한동안 쓰지 않을 때 저장된 데이터가 지워질 수 있습니다.",
+    keepAndroid: "Android: Chrome 메뉴 → \"홈 화면에 추가\" 또는 \"앱 설치\".",
+    shareT: "다른 사람에게 전하기",
+    qrSheet: "장소별 게시용 포스터(인쇄용)",
+    aboutT: "이 페이지에 대하여",
+    about1: "가와고에시와 국토지리원의 공개 데이터를 바탕으로 개인이 만든 비공식 페이지입니다. 공식 정보를 대신하지 않습니다.",
+    about2: "대피 장소 정보가 최신이 아닐 수 있습니다. 최신 상황은 반드시 가와고에시에서 확인하세요.",
+    about3: "대피 장소는 재해 종류별로 지정되어 있습니다. \"지정 긴급 대피 장소\"는 생명을 지키기 위해 급히 피하는 곳, \"지정 대피소\"는 집에서 지낼 수 없게 된 사람이 머무는 곳입니다.",
+    about4: "일본어 이외의 언어는 AI가 번역했으며 아직 사람이 확인하지 않았습니다.",
+    dataDate: "데이터: 국토지리원({gsi} 갱신)・가와고에시({city} 갱신)",
+    tabShare: "모두에게 나누기",
+    give: "📤 이 앱을 주변 사람에게 나누기",
+    shareLead: "이 앱은 신호가 없어도 사람에서 사람으로 전할 수 있습니다. 받은 사람도 다시 다른 사람에게 전할 수 있습니다.",
+    shareOnlineT: "① 신호가 있을 때: QR 보여 주기",
+    shareOnline: "상대방이 휴대폰 카메라로 이 QR을 읽게 하세요. 한 번 열면 저장되어 이후에는 신호 없이도 쓸 수 있습니다.",
+    shareOfflineT: "② 신호가 없을 때: 파일로 보내기",
+    shareOffline: "AirDrop(iPhone)이나 Quick Share(Android)로 인터넷 없이 보낼 수 있습니다.",
+    shareFileBtn: "파일로 보내기(AirDrop・Quick Share)",
+    shareFileSaved: "이 기기에서는 바로 보낼 수 없어 파일을 저장했습니다. \"파일\" 앱에서 공유하세요.",
+    shareCount: "지금까지 {n}번 나눴습니다.",
+    routeBtn: "길 안내",
+    routeT: "{name}까지 가는 길",
+    routeWalk: "걸어서 약 {d}({min}분)",
+    routeLoading: "길을 찾고 있습니다…",
+    routeNone: "이 화면에는 도로 데이터가 없어 방향과 직선거리만 표시합니다. 신호가 있을 때 앱을 한 번 열면 길 안내도 저장됩니다.",
+    routeFar: "현재 위치가 도로 데이터에서 {d} 떨어져 있습니다. 가까운 도로로 나간 뒤 사용하세요.",
+    routeAvoid: "가능한 한 피한 곳: {list}",
+    routeStill: "이 길에서도 지나는 곳: {list}. 조심하세요.",
+    routeNote: "침수·토사 구역은 '예측'입니다. 지금의 통행금지, 잔해, 물의 깊이는 알 수 없습니다. 위험해 보이면 되돌아가 다른 길로 가세요.",
+    routeSrc: "도로: 일본 국토지리원 벡터 타일. 침수·가옥 붕괴·토사 재해 구역: 국토수치정보(국토교통성, 2024).",
+    routeMapNote: "위쪽이 북쪽. 빨간 굵은 선이 길, ●가 출발, ■가 도착. 파란 길은 이번 재해에서 피해야 할 길.",
+    stepTurn: "{d} 가서 {turn}",
+    stepEnd: "{d} 가면 도착",
+    turnR: "오른쪽으로",
+    turnL: "왼쪽으로",
+    hBridge: "다리",
+    hTunnel: "지하도·터널",
+    hStairs: "계단",
+    hNarrow: "좁은 길(폭 3m 미만)",
+    hRiver: "강·수로 옆",
+    hFlood: "침수 예상 0.5~3m",
+    hDeep: "침수 예상 3m 이상",
+    hCollapse: "집이 떠내려갈 우려가 있는 구역",
+    hSlope: "토사재해 경계구역",
+    recvT: "③ 받은 사람에게(이 화면을 보여 주세요)",
+    recvIos: "iPhone: AirDrop을 받기 → \"파일\" 앱에서 kawagoe-bousai.html을 눌러 열기.",
+    recvAndroid: "Android: 받은 뒤 \"파일\" 앱에서 kawagoe-bousai.html을 열고 Chrome을 선택.",
+    recvNoJs: "지도나 위치가 작동하지 않아도 대피 장소 목록과 전화번호는 볼 수 있습니다.",
+    fileMode: "파일에서 열었습니다. 신호가 있을 때 QR의 주소를 열면 홈 화면에 추가할 수 있습니다.",
+    lang: "언어",
+  },
+};
+// 決まった場所（住所を国土地理院の住所検索で座標にしたもの。2026-11-21）
+window.SPOTS = [
+  { id: "tokinokane", lat: 35.923595, lon: 139.483627, name: { ja: "一番街（時の鐘）", easy: "いちばんがい（ときのかね）", en: "Ichibangai (Toki no Kane)", zh: "一番街（时之钟）", ko: "이치방가이(도키노카네)" } },
+  { id: "honkawagoe", lat: 35.914635, lon: 139.481705, name: { ja: "本川越駅", easy: "ほんかわごええき", en: "Hon-Kawagoe Station", zh: "本川越站", ko: "혼카와고에역" } },
+  { id: "kawagoe", lat: 35.906883, lon: 139.483643, name: { ja: "川越駅", easy: "かわごええき", en: "Kawagoe Station", zh: "川越站", ko: "가와고에역" } },
+  { id: "kitain", lat: 35.917866, lon: 139.488556, name: { ja: "喜多院", easy: "きたいん", en: "Kitain Temple", zh: "喜多院", ko: "기타인" } },
+  { id: "hikawa", lat: 35.927532, lon: 139.488831, name: { ja: "川越氷川神社", easy: "かわごえひかわじんじゃ", en: "Kawagoe Hikawa Shrine", zh: "川越冰川神社", ko: "가와고에 히카와 신사" } },
+];
+</script>
+<script>
+// 道順：危ない所をなるべく避けて歩く道を、この端末の中だけで探す（data/roads.js を使う。外へは何も送らない）。
+// 道の印は tools/build-roads.py と同じビット。重みは「道の長さに掛ける数」で、大きいほど避ける。
+(function () {
+  "use strict";
+  const BR = 1, TU = 2, ST = 4, NA = 8, RV = 16, F1 = 32, F2 = 64, CO = 128, SL = 256;
+  const BITS = [[BR, "hBridge"], [TU, "hTunnel"], [ST, "hStairs"], [NA, "hNarrow"], [RV, "hRiver"], [F1, "hFlood"], [F2, "hDeep"], [CO, "hCollapse"], [SL, "hSlope"]];
+  // 地震：細い道（ブロック塀・倒れた家）・崖・橋・地下道。大雨：浸水・家屋倒壊・川のそば・地下道（冠水）・橋。火事：細い道（燃え広がる・ふさがる）
+  const W = {
+    quake: { [BR]: 1.5, [TU]: 2, [ST]: 1.5, [NA]: 2.5, [RV]: 1.5, [SL]: 20 },
+    flood: { [BR]: 4, [TU]: 30, [ST]: 1.2, [RV]: 5, [F1]: 4, [F2]: 15, [CO]: 30, [SL]: 20 },
+    fire: { [BR]: 1.2, [TU]: 3, [ST]: 1.5, [NA]: 4, [SL]: 5 },
+    none: {}, // 検査用：危なさを見ない、ただの近道
+  };
+  const Q = 1e5, M_LAT = 111320, M_LON = 111320 * Math.cos((35.9 * Math.PI) / 180), CELL = 500; // 近い点を探す升目（1e-5 度で 500 = 約 500m）
+  let G = null, loading = null;
+
+  function build(R) {
+    const nn = R.n.length / 2, lon = new Float64Array(nn), lat = new Float64Array(nn);
+    let x = 0, y = 0;
+    for (let i = 0; i < nn; i++) { x += R.n[2 * i]; y += R.n[2 * i + 1]; lon[i] = x; lat[i] = y; }
+    const ne = R.e.length, ea = new Int32Array(ne), eb = new Int32Array(ne), el = new Float64Array(ne), ef = new Int32Array(ne), deg = new Int32Array(nn + 1);
+    R.e.forEach((r, i) => { ea[i] = r[0]; eb[i] = r[1]; el[i] = r[2]; ef[i] = r[3]; deg[r[0] + 1]++; deg[r[1] + 1]++; });
+    for (let i = 0; i < nn; i++) deg[i + 1] += deg[i];
+    const adj = new Int32Array(2 * ne), fill = deg.slice(0, nn);
+    for (let i = 0; i < ne; i++) { adj[fill[ea[i]]++] = i; adj[fill[eb[i]]++] = i; }
+    const grid = new Map();
+    for (let i = 0; i < nn; i++) { const k = Math.floor(lon[i] / CELL) + "," + Math.floor(lat[i] / CELL); (grid.get(k) || grid.set(k, []).get(k)).push(i); }
+    return { R, nn, lon, lat, ea, eb, el, ef, deg, adj, grid };
+  }
+  function load() {
+    if (G) return Promise.resolve(G);
+    if (window.ROADS) return Promise.resolve((G = build(window.ROADS)));
+    if (loading) return loading;
+    loading = new Promise((ok, ng) => {
+      if (location.protocol === "file:") { loading = null; return ng(new Error("no roads")); }
+      const s = document.createElement("script");
+      s.src = "./data/roads.js";
+      s.onload = () => (window.ROADS ? ok((G = build(window.ROADS))) : ng(new Error("no roads")));
+      s.onerror = () => { loading = null; s.remove(); ng(new Error("load")); };
+      document.head.appendChild(s);
+    });
+    return loading;
+  }
+  const meters = (lat1, lon1, lat2, lon2) => Math.hypot((lon1 - lon2) * M_LON, (lat1 - lat2) * M_LAT);
+  function snap(p) {
+    const X = p.lon * Q, Y = p.lat * Q, cx = Math.floor(X / CELL), cy = Math.floor(Y / CELL);
+    let best = -1, bd = Infinity;
+    for (let r = 0; r <= 3 && (best < 0 || r <= 1); r++) {
+      for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        for (const i of G.grid.get(cx + dx + "," + (cy + dy)) || []) { const d = meters(Y / Q, X / Q, G.lat[i] / Q, G.lon[i] / Q); if (d < bd) { bd = d; best = i; } }
+      }
+    }
+    return { i: best, d: bd };
+  }
+  function weight(f, hz) {
+    const w = W[hz] || W.quake;
+    if (!Object.keys(w).length) return 1;
+    let k = 1;
+    for (const [b] of BITS) if (f & b && w[b]) k *= w[b];
+    return Math.min(k, 200);
+  }
+  // 出発点から、行き先の点ぜんぶまで（重みつきの）いちばん近い道を探す
+  function routes(from, targets, hz) {
+    const s = snap(from), goals = targets.map(snap), want = new Set(goals.map((g) => g.i));
+    const dist = new Float64Array(G.nn).fill(Infinity), prev = new Int32Array(G.nn).fill(-1), done = new Uint8Array(G.nn);
+    const hk = [], hv = [];
+    const push = (v, k) => { let i = hk.length; hk.push(k); hv.push(v); while (i > 0) { const p = (i - 1) >> 1; if (hk[p] <= k) break; hk[i] = hk[p]; hv[i] = hv[p]; i = p; } hk[i] = k; hv[i] = v; };
+    const pop = () => { const v = hv[0], lk = hk.pop(), lv = hv.pop(); if (hk.length) { let i = 0; for (;;) { let c = 2 * i + 1; if (c >= hk.length) break; if (c + 1 < hk.length && hk[c + 1] < hk[c]) c++; if (hk[c] >= lk) break; hk[i] = hk[c]; hv[i] = hv[c]; i = c; } hk[i] = lk; hv[i] = lv; } return v; };
+    dist[s.i] = 0; push(s.i, 0);
+    let left = want.size;
+    while (hk.length && left) {
+      const u = pop();
+      if (done[u]) continue;
+      done[u] = 1;
+      if (want.has(u)) left--;
+      for (let j = G.deg[u]; j < G.deg[u + 1]; j++) {
+        const e = G.adj[j], v = G.ea[e] === u ? G.eb[e] : G.ea[e], nd = dist[u] + G.el[e] * weight(G.ef[e], hz);
+        if (nd < dist[v]) { dist[v] = nd; prev[v] = e; push(v, nd); }
+      }
+    }
+    return goals.map((g) => {
+      if (!done[g.i]) return null;
+      const edges = [];
+      for (let v = g.i; v !== s.i; ) { const e = prev[v]; const a = G.ea[e] === v ? G.eb[e] : G.ea[e]; edges.push([e, a]); v = a; }
+      edges.reverse();
+      const pts = [[G.lat[s.i] / Q, G.lon[s.i] / Q]], seg = [];
+      let len = 0;
+      const by = {};
+      for (const [e, a] of edges) {
+        const row = G.R.e[e], fwd = G.ea[e] === a;
+        const mids = [];
+        let x = G.lon[G.ea[e]], y = G.lat[G.ea[e]];
+        for (let k = 4; k < row.length; k += 2) { x += row[k]; y += row[k + 1]; mids.push([y / Q, x / Q]); }
+        if (!fwd) mids.reverse();
+        const b = fwd ? G.eb[e] : G.ea[e];
+        const part = mids.concat([[G.lat[b] / Q, G.lon[b] / Q]]);
+        seg.push({ from: pts.length - 1, to: pts.length - 1 + part.length, f: G.ef[e], len: G.el[e] });
+        pts.push(...part);
+        len += G.el[e];
+        for (const [bit] of BITS) if (G.ef[e] & bit) by[bit] = (by[bit] || 0) + G.el[e];
+      }
+      return { len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
+    });
+  }
+  // 曲がる所（35度より大きく向きが変わる所）で区切った案内
+  function steps(r) {
+    const brg = (a, b) => (Math.atan2((b[1] - a[1]) * M_LON, (b[0] - a[0]) * M_LAT) * 180) / Math.PI;
+    const out = [];
+    let run = r.startGap;
+    for (let i = 1; i < r.pts.length; i++) {
+      run += meters(r.pts[i - 1][0], r.pts[i - 1][1], r.pts[i][0], r.pts[i][1]);
+      if (i === r.pts.length - 1) break;
+      let d = brg(r.pts[i], r.pts[i + 1]) - brg(r.pts[i - 1], r.pts[i]);
+      d = ((d + 540) % 360) - 180;
+      if (Math.abs(d) > 35 && run >= 15) { out.push({ d: run, turn: d > 0 ? "R" : "L" }); run = 0; }
+    }
+    out.push({ d: run + r.endGap, turn: "end" });
+    return out;
+  }
+  // 上が北の道の地図（SVG）。まわりの道は細い灰色、いまの災害で避けたい道は色つき、道順は太い線
+  function svg(r, hz, label) {
+    const ps = r.pts;
+    let s = Infinity, n = -Infinity, w = Infinity, e = -Infinity;
+    for (const [la, lo] of ps) { s = Math.min(s, la); n = Math.max(n, la); w = Math.min(w, lo); e = Math.max(e, lo); }
+    const cy = (s + n) / 2, cx = (w + e) / 2;
+    let hw = Math.max(((e - w) * M_LON) / 2, ((n - s) * M_LAT) / 2, 200) * 1.15; // 半分の幅（m）
+    const S = 300, k = S / 2 / hw;
+    const X = (lo) => (S / 2 + (lo - cx) * M_LON * k).toFixed(1), Y = (la) => (S / 2 - (la - cy) * M_LAT * k).toFixed(1);
+    const bw = cx - hw / M_LON, be = cx + hw / M_LON, bs = cy - hw / M_LAT, bn = cy + hw / M_LAT, wt = W[hz] || W.quake;
+    const inb = (i) => { const lo = G.lon[i] / Q, la = G.lat[i] / Q; return lo > bw && lo < be && la > bs && la < bn; };
+    let bg = "", hzd = "";
+    for (let i = 0; i < G.ea.length; i++) {
+      if (!inb(G.ea[i]) && !inb(G.eb[i])) continue;
+      const row = G.R.e[i];
+      let x = G.lon[G.ea[i]], y = G.lat[G.ea[i]], d = "M" + X(x / Q) + " " + Y(y / Q);
+      for (let j = 4; j < row.length; j += 2) { x += row[j]; y += row[j + 1]; d += "L" + X(x / Q) + " " + Y(y / Q); }
+      d += "L" + X(G.lon[G.eb[i]] / Q) + " " + Y(G.lat[G.eb[i]] / Q);
+      if (weight(G.ef[i], hz) >= 2.5) hzd += d; else bg += d;
+    }
+    const line = ps.map((p, i) => (i ? "L" : "M") + X(p[1]) + " " + Y(p[0])).join("");
+    const a = ps[0], z = ps[ps.length - 1];
+    return `<svg viewBox="0 0 ${S} ${S}" role="img" aria-label="${label}"><rect width="${S}" height="${S}" class="rbg"/><path d="${bg}" class="rd"/><path d="${hzd}" class="rh"/><path d="${line}" class="rt"/>` +
+      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/></svg>`;
+  }
+  window.ROUTE = { load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
+})();
+</script>
+<script>
+// 川越 避難ガイドの動き。外へは何も送らない（現在地もこの端末の中だけで使う）。
+(function () {
+  "use strict";
+  // 人に渡すファイルの中身。描く前の形を、動き出したときに写しておく（電波もサーバーも無しで渡せるように）
+  const SOURCE = "<!doctype html>\n" + document.documentElement.outerHTML;
+  const FILE_MODE = location.protocol === "file:";
+  const $ = (s, r = document) => r.querySelector(s);
+  const LS = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } };
+  const codes = LANGS.map((l) => l[0]);
+  const guess = () => { const n = (navigator.language || "ja").toLowerCase(); return n.startsWith("ja") ? "ja" : n.startsWith("zh") ? "zh" : n.startsWith("ko") ? "ko" : "en"; };
+  const urlLang = new URLSearchParams(location.search).get("lang");
+  const st = {
+    lang: codes.includes(urlLang) ? urlLang : codes.includes(LS("kb-lang")) ? LS("kb-lang") : guess(),
+    hz: "quake",
+    here: null, // { lat, lon, label }
+    heading: null,
+    tab: "near",
+    route: null, // 道順を出している一覧の番号
+  };
+  const t = (k) => (T[st.lang] && T[st.lang][k] !== undefined ? T[st.lang][k] : T.ja[k]);
+  const fmt = (s, o) => String(s).replace(/\{(\w+)\}/g, (_, k) => o[k]);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // 距離（m）と方角（度。北=0、時計回り）
+  function geo(a, b) {
+    const R = 6371000, r = Math.PI / 180;
+    const p1 = a.lat * r, p2 = b.lat * r, dp = (b.lat - a.lat) * r, dl = (b.lon - a.lon) * r;
+    const h = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    const d = 2 * R * Math.asin(Math.sqrt(h));
+    const y = Math.sin(dl) * Math.cos(p2), x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+    return { d, b: ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360 };
+  }
+  const DIRS = ["dirN", "dirNE", "dirE", "dirSE", "dirS", "dirSW", "dirW", "dirNW"];
+  const dirName = (b) => t(DIRS[Math.round(b / 45) % 8]);
+  const dist = (m) => (m < 1000 ? Math.round(m / 10) * 10 + t("meters") : (m / 1000).toFixed(1) + t("km"));
+  // 災害の種類 → 使える場所
+  function fits(p) {
+    if (st.hz === "flood") return p.h.includes("flood") || p.h.includes("inland");
+    return p.h.includes("quake"); // 地震。火事は指定が無いので地震用の広い場所を出す
+  }
+  function nearest(n) {
+    if (!st.here) return [];
+    return PLACES.filter(fits).map((p) => Object.assign({ p }, geo(st.here, p))).sort((a, b) => a.d - b.d).slice(0, n);
+  }
+  window.KB = { geo, nearest: (here, hz, n) => { st.here = here; st.hz = hz; return nearest(n); } }; // 検査用
+
+  function arrow(b) {
+    const rot = st.heading == null ? b : b - st.heading;
+    return `<svg class="arrow" data-b="${b.toFixed(0)}" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(${rot.toFixed(0)}deg)"><path d="M12 2 19 20 12 16 5 20Z"/></svg>`;
+  }
+  function miniMap(list) {
+    if (!list.length) return "";
+    const max = Math.max(500, ...list.map((x) => x.d)) * 1.15, S = 150;
+    const pt = (x) => { const r = (x.d / max) * (S - 14), a = (x.b * Math.PI) / 180; return [S + r * Math.sin(a), S - r * Math.cos(a)]; };
+    const ring = (m) => (m < max ? `<circle cx="${S}" cy="${S}" r="${((m / max) * (S - 14)).toFixed(1)}" class="ring"/><text x="${S + 3}" y="${(S - (m / max) * (S - 14) + 12).toFixed(1)}" class="rl">${dist(m)}</text>` : "");
+    const dots = list.map((x, i) => { const [cx, cy] = pt(x); return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="11" class="dot"/><text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" class="dn">${i + 1}</text>`; }).join("");
+    return `<figure class="mini"><svg viewBox="0 0 300 300" role="img" aria-label="${esc(t("mapNote"))}">${ring(500)}${ring(1000)}${ring(2000)}<text x="${S}" y="14" class="north">N ▲</text><circle cx="${S}" cy="${S}" r="7" class="me"/>${dots}</svg><figcaption>${esc(t("mapNote"))}</figcaption></figure>`;
+  }
+  function nearHTML() {
+    const hzBtn = (k, label) => `<button type="button" class="chip" data-hz="${k}" aria-pressed="${st.hz === k}">${esc(t(label))}</button>`;
+    const spots = SPOTS.map((s) => `<button type="button" class="chip" data-spot="${s.id}" aria-pressed="${!!(st.here && st.here.id === s.id)}">${esc(s.name[st.lang] || s.name.en)}</button>`).join("");
+    let body = "";
+    if (st.here) {
+      const list = nearest(5);
+      body += `<p class="hint" id="gps-msg">${esc(st.here.id ? st.here.label : t("gpsOk"))}</p>`;
+      if (st.hz === "fire") body += `<p class="warn">${esc(t("noFireSite"))}</p>`;
+      if (st.hz === "flood") body += `<p class="warn">${esc(t("floodNote"))}</p>`;
+      body += `<ol class="places">` + list.map((x, i) => {
+        const p = x.p, tags = [];
+        if (st.hz === "flood" && p.f) tags.push(`<span class="tag up">${esc(fmt(t("floorUp"), { n: p.f }))}</span>`);
+        if (p.s) tags.push(`<span class="tag">${esc(t("shelterMark"))}</span>`);
+        const map = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
+        return `<li><span class="no">${i + 1}</span>${arrow(x.b)}<div class="pl"><b>${esc(p.n)}</b><span class="dd">${esc(dirName(x.b))} ${esc(dist(x.d))}</span><span class="ad">${esc(p.a)}</span>${tags.join("")}${p.note ? `<span class="nt">${esc(p.note)}</span>` : ""}<span class="rw" data-rw="${i}"></span><button type="button" class="sub rbtn" data-route="${i}" aria-pressed="${st.route === i}">🚶 ${esc(t("routeBtn"))}</button><a href="${map}" target="_blank" rel="noopener">${esc(t("openMap"))}</a></div></li>`;
+      }).join("") + `</ol>`;
+      body += `<section id="route" aria-live="polite"></section>`;
+      body += miniMap(list);
+      body += `<p><button type="button" class="sub" id="compass">${esc(t("compass"))}</button> <span class="hint" id="compass-msg"></span></p>`;
+    }
+    return `<h2>${esc(t("whatHappen"))}</h2><div class="row">${hzBtn("quake", "hzQuake")}${hzBtn("flood", "hzFlood")}${hzBtn("fire", "hzFire")}</div>
+      <h2>${esc(t("whereAreYou"))}</h2><button type="button" class="main" id="gps">📍 ${esc(t("useGps"))}</button><p class="hint" id="gps-state" aria-live="polite"></p>
+      <p class="hint">${esc(t("orPick"))}</p><div class="row">${spots}</div><div id="result">${body}</div>`;
+  }
+  const steps = (k) => `<h2>${esc(t(k + "T"))}</h2><ol class="steps">${t(k).map((s) => `<li>${esc(s)}</li>`).join("")}</ol>`;
+  const doHTML = () => steps("doQuake") + steps("doFlood") + steps("doFire");
+  function talkHTML() {
+    const ja = T.ja.talk, mine = t("talk");
+    return `<p class="hint">${esc(t("talkHint"))}</p><ul class="talk">` + ja.map((row, i) => `<li><span class="big">${esc(row[0])}</span>${st.lang === "ja" ? "" : `<span class="tr" lang="${st.lang === "easy" ? "ja" : st.lang}">${esc(mine[i][0])}</span>`}</li>`).join("") + `</ul>`;
+  }
+  function infoHTML() {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    return `<h2>${esc(t("callT"))}</h2><ul class="calls"><li><a href="tel:119">${esc(t("call119"))}</a></li><li><a href="tel:110">${esc(t("call110"))}</a></li><li><a href="tel:171">${esc(t("call171"))}</a></li></ul>
+      <h2>${esc(t("wifiT"))}</h2><p>${esc(t("wifi"))}</p>
+      <h2>${esc(t("keepT"))}</h2><p>${esc(ios ? t("keepIos") : t("keepAndroid"))}</p><p class="hint">${esc(ios ? t("keepAndroid") : t("keepIos"))}</p>
+      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html">${esc(t("qrSheet"))}</a></p>
+      <h2>${esc(t("linksT"))}</h2><ul class="links">
+        <li><a href="https://www.city.kawagoe.saitama.jp/kurashi/anshin/1001545/1001581/1001583.html" target="_blank" rel="noopener">${esc(t("lnCity"))}</a></li>
+        <li><a href="https://www.city.kawagoe.saitama.jp/shisei/shisetsu/hinanjyo/1013361.html" target="_blank" rel="noopener">${esc(t("lnHinan"))}</a></li>
+        <li><a href="https://www.jma.go.jp/bosai/" target="_blank" rel="noopener">${esc(t("lnJma"))}</a></li>
+        <li><a href="https://www.jnto.go.jp/safety-tips/" target="_blank" rel="noopener">${esc(t("lnSafety"))}</a></li></ul>
+      <h2>${esc(t("aboutT"))}</h2><p>${esc(t("about1"))}</p><p>${esc(t("about2"))}</p><p>${esc(t("about3"))}</p>${st.lang === "ja" ? "" : `<p class="warn">${esc(t("about4"))}</p>`}
+      <p class="hint">${esc(fmt(t("dataDate"), PLACES_META))}</p>`;
+  }
+
+  function shareHTML() {
+    const n = Number(LS("kb-shared") || 0);
+    return `<p>${esc(t("shareLead"))}</p>
+      <h2>${esc(t("shareOnlineT"))}</h2><p>${esc(t("shareOnline"))}</p>
+      <div class="qrbox" id="qr">${APP_QR[st.lang] || APP_QR.ja}</div><p class="url">${esc(APP_URL + (st.lang === "ja" ? "" : "?lang=" + st.lang))}</p>
+      <h2>${esc(t("shareOfflineT"))}</h2><p>${esc(t("shareOffline"))}</p>
+      <button type="button" class="main" id="givefile">📲 ${esc(t("shareFileBtn"))}</button><p class="hint" id="give-msg" aria-live="polite"></p>
+      ${n ? `<p class="count" id="give-count">${esc(fmt(t("shareCount"), { n }))}</p>` : ""}
+      <h2>${esc(t("recvT"))}</h2><div class="recv"><p>${esc(t("recvIos"))}</p><p>${esc(t("recvAndroid"))}</p><p class="hint">${esc(t("recvNoJs"))}</p></div>`;
+  }
+
+  function render() {
+    document.documentElement.lang = st.lang === "easy" ? "ja" : st.lang === "zh" ? "zh-Hans" : st.lang;
+    document.title = t("title");
+    $("#title").textContent = t("title");
+    $("#sub").textContent = t("sub");
+    $("#lang-label").textContent = t("lang");
+    $("#lang").value = st.lang;
+    for (const b of document.querySelectorAll("nav [data-tab]")) { b.textContent = t("tab" + b.dataset.tab[0].toUpperCase() + b.dataset.tab.slice(1)); b.setAttribute("aria-selected", String(b.dataset.tab === st.tab)); }
+    const v = $("#view");
+    $("#give").textContent = t("give");
+    $("#give").hidden = st.tab === "share";
+    v.innerHTML = st.tab === "near" ? nearHTML() : st.tab === "do" ? doHTML() : st.tab === "talk" ? talkHTML() : st.tab === "share" ? shareHTML() : infoHTML();
+    v.setAttribute("aria-labelledby", "tab-" + st.tab);
+    status();
+    if (st.tab === "near" && st.here) fillRoutes();
+    if (st.tab === "share") ROUTE.load().catch(() => {}); // 渡すファイルに道のデータも入れるので、先に読んでおく（押してから待たせない）
+  }
+
+  // 道順（src/route.js）。道のデータは大きいので、場所が決まってから読む
+  let rc = { key: "", res: null };
+  const walk = (m) => fmt(t("routeWalk"), { d: dist(m), min: Math.max(1, Math.ceil(m / 60)) }); // 災害のときは分速60mで見る
+  function fillRoutes() {
+    const list = nearest(5), key = [st.here.lat, st.here.lon, st.hz].join();
+    const box = $("#route");
+    if (st.route != null && box && !ROUTE.ready()) box.innerHTML = `<p class="hint">${esc(t("routeLoading"))}</p>`;
+    ROUTE.load().then(() => {
+      if (rc.key !== key) rc = { key, res: ROUTE.routes(st.here, list.map((x) => x.p), st.hz === "fire" ? "fire" : st.hz) };
+      if (!$("#route")) return;
+      rc.res.forEach((r, i) => { const el = document.querySelector(`[data-rw="${i}"]`); if (el && r) el.textContent = walk(r.len); });
+      if (st.route != null) $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]);
+    }, () => {
+      const b = $("#route");
+      if (b && st.route != null) b.innerHTML = `<p class="warn">${esc(t("routeNone"))}</p>`;
+    });
+  }
+  function routeHTML(x, r) {
+    if (!x || !r) return `<p class="warn">${esc(t("routeNone"))}</p>`;
+    const hz = st.hz === "fire" ? "fire" : st.hz, w = ROUTE.W[hz];
+    const avoid = ROUTE.BITS.filter(([b]) => (w[b] || 1) >= 2), still = avoid.filter(([b]) => r.by[b] > 0);
+    const name = (k) => t(k);
+    const turn = (s) => s.turn === "end" ? fmt(t("stepEnd"), { d: dist(s.d) }) : fmt(t("stepTurn"), { d: dist(s.d), turn: t(s.turn === "R" ? "turnR" : "turnL") });
+    let h = `<h2>${esc(fmt(t("routeT"), { name: x.p.n }))}</h2><p class="dd">${esc(walk(r.len))}</p>`;
+    if (r.startGap > 300) h += `<p class="warn">${esc(fmt(t("routeFar"), { d: dist(r.startGap) }))}</p>`;
+    h += `<figure class="rmap">${ROUTE.svg(r, hz, esc(t("routeMapNote")))}<figcaption>${esc(t("routeMapNote"))}</figcaption></figure>`;
+    h += `<p class="hint">${esc(fmt(t("routeAvoid"), { list: avoid.map(([, k]) => name(k)).join("・") }))}</p>`;
+    if (still.length) h += `<p class="warn" id="route-still">${esc(fmt(t("routeStill"), { list: still.map(([b, k]) => name(k) + " " + dist(r.by[b])).join("・") }))}</p>`;
+    h += `<ol class="rsteps">${ROUTE.steps(r).map((s) => `<li>${esc(turn(s))}</li>`).join("")}</ol>`;
+    h += `<p class="warn">${esc(t("routeNote"))}</p><p class="hint">${esc(t("routeSrc"))}</p>`;
+    return h;
+  }
+  function status() {
+    const el = $("#status");
+    const saved = LS("kb-saved") === "1";
+    if (FILE_MODE) { el.className = "status ok"; el.textContent = t("fileMode"); return; }
+    el.className = "status " + (navigator.onLine ? (saved ? "ok" : "warn") : "off");
+    el.textContent = navigator.onLine ? (saved ? t("saved") : t("notSaved")) : t("offline");
+  }
+
+  function useGps() {
+    const s = $("#gps-state");
+    if (!navigator.geolocation) { s.textContent = t("gpsFail"); return; }
+    s.textContent = t("gpsWait");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { st.here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; st.route = null; render(); },
+      () => { $("#gps-state").textContent = t("gpsFail"); },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 },
+    );
+  }
+  function compass() {
+    const msg = $("#compass-msg");
+    const on = (e) => {
+      const h = typeof e.webkitCompassHeading === "number" ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null;
+      if (h == null) return;
+      st.heading = h;
+      for (const a of document.querySelectorAll(".places .arrow")) a.style.transform = `rotate(${(Number(a.dataset.b) - h).toFixed(0)}deg)`;
+    };
+    const start = () => { window.addEventListener("deviceorientationabsolute", on); window.addEventListener("deviceorientation", on); msg.textContent = t("compassOn"); };
+    if (typeof DeviceOrientationEvent === "undefined") { msg.textContent = t("compassNo"); return; }
+    if (typeof DeviceOrientationEvent.requestPermission === "function") DeviceOrientationEvent.requestPermission().then((r) => (r === "granted" ? start() : (msg.textContent = t("compassNo"))), () => (msg.textContent = t("compassNo")));
+    else start();
+  }
+  // ファイルで渡す。共有の画面（AirDrop・クイック共有）を開き、使えない端末ではファイルを保存する
+  const ROADS_MARK = 'id="roads' + '-data"'; // 本文にこの文字をそのまま書かない（app.js 自身が入った写しで見まちがえないように）
+  async function fileSource() {
+    if (SOURCE.includes("<script " + ROADS_MARK)) return SOURCE;
+    try { await ROUTE.load(); } catch (e) { return SOURCE; }
+    const data = "<script " + ROADS_MARK + ">window.ROADS = " + JSON.stringify(window.ROADS) + ";</" + "script>\n";
+    const at = SOURCE.lastIndexOf("</body>");
+    return SOURCE.slice(0, at) + data + SOURCE.slice(at);
+  }
+  async function giveFile() {
+    const msg = $("#give-msg");
+    const file = new File([await fileSource()], "kawagoe-bousai.html", { type: "text/html" });
+    const counted = () => { LS("kb-shared", String(Number(LS("kb-shared") || 0) + 1)); };
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: t("title") }); counted(); render(); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    counted();
+    msg.textContent = t("shareFileSaved");
+  }
+  window.KB.source = () => SOURCE; // 検査用
+  window.KB.fileSource = fileSource;
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
+    if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
+    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.spot) { st.route = null; const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
+    if (b.id === "gps") return useGps();
+    if (b.id === "compass") return compass();
+    if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
+    if (b.id === "givefile") return giveFile();
+  });
+  $("#lang").addEventListener("change", (e) => { st.lang = e.target.value; LS("kb-lang", st.lang); if (st.here && st.here.id) { const s = SPOTS.find((x) => x.id === st.here.id); st.here.label = s.name[st.lang] || s.name.en; } render(); });
+  window.addEventListener("online", status);
+  window.addEventListener("offline", status);
+  $("#lang").innerHTML = LANGS.map(([c, n]) => `<option value="${c}">${n}</option>`).join("");
+  render();
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("./sw.js").then(() => navigator.serviceWorker.ready).then(() => { LS("kb-saved", "1"); status(); }).catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
