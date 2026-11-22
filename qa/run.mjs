@@ -95,6 +95,13 @@ try {
   const card = /<section class="poster" data-spot="tokinokane">(.*?)<\/section>/s.exec(print)[1];
   const paper = (cls) => [...(new RegExp(`<ol class="${cls}">(.*?)</ol>`, "s").exec(card)[1]).matchAll(/<b class="nm">([^<]+)<\/b>/g)].map((m) => m[1]);
   const paperQuake = paper("lq");
+  {
+    await page.waitForFunction(() => (document.querySelector('[data-rw="2"]') || {}).textContent, null, { timeout: 20000 });
+    const appWalk = (await page.locator(".rw").allTextContents()).slice(0, 3).map((x) => x.match(/約(.+?)（/)[1]);
+    const paperWalk = [...(/<ol class="lq">(.*?)<\/ol>/s.exec(card)[1]).matchAll(/🚶 (\S+) /g)].map((m) => m[1]);
+    check("掲示用ポスター：地震の歩く距離が画面の道順と同じ（一番街）", appWalk.join() === paperWalk.join(), appWalk.join() + " / " + paperWalk.join());
+    check("掲示用ポスター：場所ごとに歩く道の線が地震3本・洪水3本ある", (card.match(/stroke="#b3261e" stroke-width="3"/g) || []).length === 3 && (card.match(/stroke="#1565c0" stroke-width="3"/g) || []).length === 3);
+  }
   check("掲示用ポスター：地震の近い順が画面と同じ（一番街）", paperQuake.join() === names.slice(0, 3).join(), paperQuake.join() + " / " + names.slice(0, 3).join());
   check("小さな地図：番号の点が5つ・北の印がある", (await page.locator(".mini .dot").count()) === 5 && (await page.locator(".mini .north").count()) === 1);
 
@@ -155,6 +162,19 @@ try {
   {
     const r = await page.evaluate(() => { const x = ROUTE.routes({ lat: 35.906883, lon: 139.483643 }, [PLACES[0]], "quake")[0]; let sum = 0; for (let i = 1; i < x.pts.length; i++) sum += KB.geo({ lat: x.pts[i - 1][0], lon: x.pts[i - 1][1] }, { lat: x.pts[i][0], lon: x.pts[i][1] }).d; return { sum, len: x.len - x.startGap - x.endGap, n: x.pts.length }; });
     check("道順：描く線の長さが道の長さと合う（道の形を正しく読めている）", r.n > 2 && Math.abs(r.sum - r.len) / r.len < 0.05, JSON.stringify(r));
+  }
+  {
+    // 歩きながら見る：道順の上を歩くと残りが減り、はずれると知らせ、着くと知らせる（GPS の動きは KB.pos でまねる）
+    const pts = await page.evaluate(() => { const r = ROUTE.routes({ lat: 35.906883, lon: 139.483643 }, [KB.nearest({ lat: 35.906883, lon: 139.483643 }, "flood", 5)[0].p], "flood")[0]; return [r.pts[Math.floor(r.pts.length / 3)], r.to]; });
+    await page.evaluate(() => KB.nearest({ lat: 35.906883, lon: 139.483643 }, "flood", 5));
+    await page.evaluate(([p]) => KB.pos(p[0], p[1]), pts);
+    const midMsg = await page.locator("#follow-msg").textContent();
+    const you = await page.locator("#you").getAttribute("cx");
+    await page.evaluate(([p]) => KB.pos(p[0] + 0.003, p[1]), pts);
+    const offMsg = await page.locator("#follow-msg").textContent();
+    await page.evaluate(([, z]) => KB.pos(z[0], z[1]), pts);
+    const endMsg = await page.locator("#follow-msg").textContent();
+    check("歩きながら：地図に現在地が出て、残りの距離・道からはずれた・着いたを知らせる", /のこり約/.test(midMsg) && Number(you) > 0 && /はなれています/.test(offMsg) && /着きました/.test(endMsg), [midMsg, you, offMsg, endMsg].join(" | "));
   }
   await page.click("[data-hz=quake]");
 

@@ -74,6 +74,7 @@ nav .share-tab{border-color:var(--acc)}
 .goal{fill:#b3261e;stroke:#fff;stroke-width:2}
 .rmap .north{fill:#b3261e}.rmap .me{fill:#111;stroke:#fff;stroke-width:2}
 .rsteps li{margin:.35em 0}
+.you{fill:#1565c0;stroke:#fff;stroke-width:3}
 </style>
 </head>
 <body>
@@ -228,6 +229,11 @@ window.T = {
     hDeep: "浸水想定3m以上",
     hCollapse: "家が流されるおそれのある区域",
     hSlope: "土砂災害警戒区域",
+    follow: "歩きながら見る（地図に現在地を出す）",
+    followStop: "現在地を出すのを止める",
+    followLeft: "のこり約{d}（{min}分）",
+    followOff: "道順から{d}はなれています。地図を見て道順に戻るか、危なければ別の道へ。",
+    followArrive: "着きました。入口や係の人の案内に従ってください。",
     recvT: "③ 受け取った人へ（この画面を見せてください）",
     recvIos: "iPhone：AirDropで受け取る →「ファイル」アプリで kawagoe-bousai.html をタップして開く。",
     recvAndroid: "Android：受け取ったら「ファイル」アプリで kawagoe-bousai.html を開き、Chromeを選ぶ。",
@@ -347,6 +353,11 @@ window.T = {
     hDeep: "みずに つかる よそう 3m いじょう",
     hCollapse: "いえが ながされる おそれの ある ところ",
     hSlope: "どしゃさいがい けいかい くいき",
+    follow: "あるきながら みる（ちずに いまの ばしょを だす）",
+    followStop: "いまの ばしょを だすのを やめる",
+    followLeft: "のこり やく{d}（{min}ふん）",
+    followOff: "みちじゅんから {d} はなれて います。ちずを みて もどるか、あぶなければ ほかの みちへ。",
+    followArrive: "つきました。いりぐちや かかりの ひとの あんないに したがって ください。",
     recvT: "③ うけとった ひとへ（この がめんを みせて ください）",
     recvIos: "iPhone：AirDropで うけとる →「ファイル」アプリで kawagoe-bousai.html を おす。",
     recvAndroid: "Android：「ファイル」アプリで kawagoe-bousai.html を ひらいて、Chromeを えらぶ。",
@@ -466,6 +477,11 @@ window.T = {
     hDeep: "flood forecast 3 m+",
     hCollapse: "areas where houses may be swept away",
     hSlope: "landslide warning areas",
+    follow: "Follow while walking (show my position)",
+    followStop: "Stop showing my position",
+    followLeft: "About {d} left ({min} min)",
+    followOff: "You are {d} off the route. Check the map and return to it, or take another road if it is dangerous.",
+    followArrive: "You have arrived. Follow the signs and staff at the entrance.",
     recvT: "③ For the person receiving (show them this screen)",
     recvIos: "iPhone: accept the AirDrop → in the Files app, tap kawagoe-bousai.html to open it.",
     recvAndroid: "Android: after receiving, open kawagoe-bousai.html in the Files app and choose Chrome.",
@@ -585,6 +601,11 @@ window.T = {
     hDeep: "预计浸水3米以上",
     hCollapse: "房屋可能被冲走的区域",
     hSlope: "土石流警戒区域",
+    follow: "边走边看（在地图上显示当前位置）",
+    followStop: "停止显示当前位置",
+    followLeft: "剩余约 {d}（{min} 分钟）",
+    followOff: "你偏离路线 {d}。请看地图回到路线上；如有危险，请改走其他道路。",
+    followArrive: "已到达。请按照入口和工作人员的指引。",
     recvT: "③ 给收到的人（请出示这个画面）",
     recvIos: "iPhone：接收AirDrop → 在“文件”应用中点击 kawagoe-bousai.html 打开。",
     recvAndroid: "Android：收到后在“文件”应用中打开 kawagoe-bousai.html，选择Chrome。",
@@ -704,6 +725,11 @@ window.T = {
     hDeep: "침수 예상 3m 이상",
     hCollapse: "집이 떠내려갈 우려가 있는 구역",
     hSlope: "토사재해 경계구역",
+    follow: "걸으면서 보기(지도에 현재 위치 표시)",
+    followStop: "현재 위치 표시 멈추기",
+    followLeft: "남은 거리 약 {d}({min}분)",
+    followOff: "길 안내에서 {d} 벗어났습니다. 지도를 보고 돌아가거나, 위험하면 다른 길로 가세요.",
+    followArrive: "도착했습니다. 입구와 안내 요원의 안내를 따르세요.",
     recvT: "③ 받은 사람에게(이 화면을 보여 주세요)",
     recvIos: "iPhone: AirDrop을 받기 → \"파일\" 앱에서 kawagoe-bousai.html을 눌러 열기.",
     recvAndroid: "Android: 받은 뒤 \"파일\" 앱에서 kawagoe-bousai.html을 열고 Chrome을 선택.",
@@ -736,7 +762,7 @@ window.SPOTS = [
     none: {}, // 検査用：危なさを見ない、ただの近道
   };
   const Q = 1e5, M_LAT = 111320, M_LON = 111320 * Math.cos((35.9 * Math.PI) / 180), CELL = 500; // 近い点を探す升目（1e-5 度で 500 = 約 500m）
-  let G = null, loading = null;
+  let G = null, loading = null, proj = null;
 
   function build(R) {
     const nn = R.n.length / 2, lon = new Float64Array(nn), lat = new Float64Array(nn);
@@ -803,7 +829,7 @@ window.SPOTS = [
         if (nd < dist[v]) { dist[v] = nd; prev[v] = e; push(v, nd); }
       }
     }
-    return goals.map((g) => {
+    return goals.map((g, gi) => {
       if (!done[g.i]) return null;
       const edges = [];
       for (let v = g.i; v !== s.i; ) { const e = prev[v]; const a = G.ea[e] === v ? G.eb[e] : G.ea[e]; edges.push([e, a]); v = a; }
@@ -824,7 +850,7 @@ window.SPOTS = [
         len += G.el[e];
         for (const [bit] of BITS) if (G.ef[e] & bit) by[bit] = (by[bit] || 0) + G.el[e];
       }
-      return { len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
+      return { from: [from.lat, from.lon], to: [targets[gi].lat, targets[gi].lon], len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
     });
   }
   // 曲がる所（35度より大きく向きが変わる所）で区切った案内
@@ -844,12 +870,13 @@ window.SPOTS = [
   }
   // 上が北の道の地図（SVG）。まわりの道は細い灰色、いまの災害で避けたい道は色つき、道順は太い線
   function svg(r, hz, label) {
-    const ps = r.pts;
+    const ps = [r.from].concat(r.pts, [r.to]); // 道に出るまで・道から入口までも線でつなぐ
     let s = Infinity, n = -Infinity, w = Infinity, e = -Infinity;
     for (const [la, lo] of ps) { s = Math.min(s, la); n = Math.max(n, la); w = Math.min(w, lo); e = Math.max(e, lo); }
     const cy = (s + n) / 2, cx = (w + e) / 2;
     let hw = Math.max(((e - w) * M_LON) / 2, ((n - s) * M_LAT) / 2, 200) * 1.15; // 半分の幅（m）
     const S = 300, k = S / 2 / hw;
+    proj = { cx, cy, k, S };
     const X = (lo) => (S / 2 + (lo - cx) * M_LON * k).toFixed(1), Y = (la) => (S / 2 - (la - cy) * M_LAT * k).toFixed(1);
     const bw = cx - hw / M_LON, be = cx + hw / M_LON, bs = cy - hw / M_LAT, bn = cy + hw / M_LAT, wt = W[hz] || W.quake;
     const inb = (i) => { const lo = G.lon[i] / Q, la = G.lat[i] / Q; return lo > bw && lo < be && la > bs && la < bn; };
@@ -865,9 +892,30 @@ window.SPOTS = [
     const line = ps.map((p, i) => (i ? "L" : "M") + X(p[1]) + " " + Y(p[0])).join("");
     const a = ps[0], z = ps[ps.length - 1];
     return `<svg viewBox="0 0 ${S} ${S}" role="img" aria-label="${label}"><rect width="${S}" height="${S}" class="rbg"/><path d="${bg}" class="rd"/><path d="${hzd}" class="rh"/><path d="${line}" class="rt"/>` +
-      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/></svg>`;
+      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/><circle id="you" r="9" cx="-99" cy="-99" class="you"/></svg>`;
   }
-  window.ROUTE = { load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
+  // 歩いている途中：いまの場所が道順からどれだけ離れたか（off）と、着くまでの残り（left）。どちらも m
+  function progress(r, lat, lon) {
+    const ps = [r.from].concat(r.pts, [r.to]), P = (p) => [p[1] * M_LON, p[0] * M_LAT], me = P([lat, lon]);
+    let best = { off: Infinity, i: 0, t: 0 };
+    for (let i = 1; i < ps.length; i++) {
+      const a = P(ps[i - 1]), b = P(ps[i]), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((me[0] - a[0]) * dx + (me[1] - a[1]) * dy) / L2)) : 0;
+      const off = Math.hypot(a[0] + t * dx - me[0], a[1] + t * dy - me[1]);
+      if (off < best.off) best = { off, i, t };
+    }
+    let left = 0;
+    for (let i = best.i; i < ps.length; i++) left += meters(ps[i - 1][0], ps[i - 1][1], ps[i][0], ps[i][1]) * (i === best.i ? 1 - best.t : 1);
+    return { off: best.off, left };
+  }
+  // 地図の上に「いまここ」を動かす（いちばん新しく描いた地図に）
+  function showMe(lat, lon) {
+    const el = document.getElementById("you");
+    if (!el || !proj) return;
+    el.setAttribute("cx", (proj.S / 2 + (lon - proj.cx) * M_LON * proj.k).toFixed(1));
+    el.setAttribute("cy", (proj.S / 2 - (lat - proj.cy) * M_LAT * proj.k).toFixed(1));
+  }
+  window.ROUTE = { progress, showMe, load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
 })();
 </script>
 <script>
@@ -1014,12 +1062,31 @@ window.SPOTS = [
       if (rc.key !== key) rc = { key, res: ROUTE.routes(st.here, list.map((x) => x.p), st.hz === "fire" ? "fire" : st.hz) };
       if (!$("#route")) return;
       rc.res.forEach((r, i) => { const el = document.querySelector(`[data-rw="${i}"]`); if (el && r) el.textContent = walk(r.len); });
-      if (st.route != null) $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]);
+      if (st.route != null) { $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]); if (follow.last) onPos(follow.last[0], follow.last[1]); }
     }, () => {
       const b = $("#route");
       if (b && st.route != null) b.innerHTML = `<p class="warn">${esc(t("routeNone"))}</p>`;
     });
   }
+  // 歩きながら見る：現在地を道順の地図に出し、残りの距離と、道からはずれたことを知らせる（位置は端末の中だけ）
+  const follow = { id: null, last: null };
+  function stopFollow() { if (follow.id != null) navigator.geolocation.clearWatch(follow.id); follow.id = null; follow.last = null; }
+  function onPos(lat, lon) {
+    follow.last = [lat, lon];
+    const r = rc.res && st.route != null ? rc.res[st.route] : null, msg = $("#follow-msg");
+    if (!r || !msg) return;
+    ROUTE.showMe(lat, lon);
+    const g = ROUTE.progress(r, lat, lon);
+    msg.textContent = g.left < 30 ? t("followArrive") : g.off > 60 ? fmt(t("followOff"), { d: dist(g.off) }) : fmt(t("followLeft"), { d: dist(g.left), min: Math.max(1, Math.ceil(g.left / 60)) });
+    msg.className = g.off > 60 && g.left >= 30 ? "warn" : "dd";
+  }
+  function startFollow() {
+    if (!navigator.geolocation) { $("#follow-msg").textContent = t("gpsFail"); return; }
+    follow.id = navigator.geolocation.watchPosition((p) => onPos(p.coords.latitude, p.coords.longitude), () => { const m = $("#follow-msg"); if (m) m.textContent = t("gpsFail"); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+    const b = $("#follow"); b.textContent = "📍 " + t("followStop"); b.setAttribute("aria-pressed", "true");
+    $("#follow-msg").textContent = t("gpsWait");
+  }
+  window.KB.pos = onPos; // 検査用（GPS の動きをまねる）
   function routeHTML(x, r) {
     if (!x || !r) return `<p class="warn">${esc(t("routeNone"))}</p>`;
     const hz = st.hz === "fire" ? "fire" : st.hz, w = ROUTE.W[hz];
@@ -1031,6 +1098,7 @@ window.SPOTS = [
     h += `<figure class="rmap">${ROUTE.svg(r, hz, esc(t("routeMapNote")))}<figcaption>${esc(t("routeMapNote"))}</figcaption></figure>`;
     h += `<p class="hint">${esc(fmt(t("routeAvoid"), { list: avoid.map(([, k]) => name(k)).join("・") }))}</p>`;
     if (still.length) h += `<p class="warn" id="route-still">${esc(fmt(t("routeStill"), { list: still.map(([b, k]) => name(k) + " " + dist(r.by[b])).join("・") }))}</p>`;
+    h += `<p><button type="button" class="main" id="follow" aria-pressed="${follow.id != null}">📍 ${esc(t(follow.id != null ? "followStop" : "follow"))}</button></p><p class="dd" id="follow-msg" aria-live="polite"></p>`;
     h += `<ol class="rsteps">${ROUTE.steps(r).map((s) => `<li>${esc(turn(s))}</li>`).join("")}</ol>`;
     h += `<p class="warn">${esc(t("routeNote"))}</p><p class="hint">${esc(t("routeSrc"))}</p>`;
     return h;
@@ -1098,8 +1166,9 @@ window.SPOTS = [
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
     if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
-    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
-    if (b.dataset.spot) { st.route = null; const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
+    if (b.id === "follow") { if (follow.id != null) { stopFollow(); render(); } else startFollow(); return; }
+    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; if (st.route == null) stopFollow(); render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.spot) { st.route = null; stopFollow(); const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
     if (b.id === "gps") return useGps();
     if (b.id === "compass") return compass();
     if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }

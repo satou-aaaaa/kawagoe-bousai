@@ -12,7 +12,7 @@
     none: {}, // 検査用：危なさを見ない、ただの近道
   };
   const Q = 1e5, M_LAT = 111320, M_LON = 111320 * Math.cos((35.9 * Math.PI) / 180), CELL = 500; // 近い点を探す升目（1e-5 度で 500 = 約 500m）
-  let G = null, loading = null;
+  let G = null, loading = null, proj = null;
 
   function build(R) {
     const nn = R.n.length / 2, lon = new Float64Array(nn), lat = new Float64Array(nn);
@@ -79,7 +79,7 @@
         if (nd < dist[v]) { dist[v] = nd; prev[v] = e; push(v, nd); }
       }
     }
-    return goals.map((g) => {
+    return goals.map((g, gi) => {
       if (!done[g.i]) return null;
       const edges = [];
       for (let v = g.i; v !== s.i; ) { const e = prev[v]; const a = G.ea[e] === v ? G.eb[e] : G.ea[e]; edges.push([e, a]); v = a; }
@@ -100,7 +100,7 @@
         len += G.el[e];
         for (const [bit] of BITS) if (G.ef[e] & bit) by[bit] = (by[bit] || 0) + G.el[e];
       }
-      return { len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
+      return { from: [from.lat, from.lon], to: [targets[gi].lat, targets[gi].lon], len: len + s.d + g.d, startGap: s.d, endGap: g.d, pts, seg, by, cost: dist[g.i] };
     });
   }
   // 曲がる所（35度より大きく向きが変わる所）で区切った案内
@@ -120,12 +120,13 @@
   }
   // 上が北の道の地図（SVG）。まわりの道は細い灰色、いまの災害で避けたい道は色つき、道順は太い線
   function svg(r, hz, label) {
-    const ps = r.pts;
+    const ps = [r.from].concat(r.pts, [r.to]); // 道に出るまで・道から入口までも線でつなぐ
     let s = Infinity, n = -Infinity, w = Infinity, e = -Infinity;
     for (const [la, lo] of ps) { s = Math.min(s, la); n = Math.max(n, la); w = Math.min(w, lo); e = Math.max(e, lo); }
     const cy = (s + n) / 2, cx = (w + e) / 2;
     let hw = Math.max(((e - w) * M_LON) / 2, ((n - s) * M_LAT) / 2, 200) * 1.15; // 半分の幅（m）
     const S = 300, k = S / 2 / hw;
+    proj = { cx, cy, k, S };
     const X = (lo) => (S / 2 + (lo - cx) * M_LON * k).toFixed(1), Y = (la) => (S / 2 - (la - cy) * M_LAT * k).toFixed(1);
     const bw = cx - hw / M_LON, be = cx + hw / M_LON, bs = cy - hw / M_LAT, bn = cy + hw / M_LAT, wt = W[hz] || W.quake;
     const inb = (i) => { const lo = G.lon[i] / Q, la = G.lat[i] / Q; return lo > bw && lo < be && la > bs && la < bn; };
@@ -141,7 +142,28 @@
     const line = ps.map((p, i) => (i ? "L" : "M") + X(p[1]) + " " + Y(p[0])).join("");
     const a = ps[0], z = ps[ps.length - 1];
     return `<svg viewBox="0 0 ${S} ${S}" role="img" aria-label="${label}"><rect width="${S}" height="${S}" class="rbg"/><path d="${bg}" class="rd"/><path d="${hzd}" class="rh"/><path d="${line}" class="rt"/>` +
-      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/></svg>`;
+      `<text x="${S / 2}" y="14" class="north">N ▲</text><circle cx="${X(a[1])}" cy="${Y(a[0])}" r="7" class="me"/><rect x="${(X(z[1]) - 8).toFixed(1)}" y="${(Y(z[0]) - 8).toFixed(1)}" width="16" height="16" class="goal"/><circle id="you" r="9" cx="-99" cy="-99" class="you"/></svg>`;
   }
-  window.ROUTE = { load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
+  // 歩いている途中：いまの場所が道順からどれだけ離れたか（off）と、着くまでの残り（left）。どちらも m
+  function progress(r, lat, lon) {
+    const ps = [r.from].concat(r.pts, [r.to]), P = (p) => [p[1] * M_LON, p[0] * M_LAT], me = P([lat, lon]);
+    let best = { off: Infinity, i: 0, t: 0 };
+    for (let i = 1; i < ps.length; i++) {
+      const a = P(ps[i - 1]), b = P(ps[i]), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((me[0] - a[0]) * dx + (me[1] - a[1]) * dy) / L2)) : 0;
+      const off = Math.hypot(a[0] + t * dx - me[0], a[1] + t * dy - me[1]);
+      if (off < best.off) best = { off, i, t };
+    }
+    let left = 0;
+    for (let i = best.i; i < ps.length; i++) left += meters(ps[i - 1][0], ps[i - 1][1], ps[i][0], ps[i][1]) * (i === best.i ? 1 - best.t : 1);
+    return { off: best.off, left };
+  }
+  // 地図の上に「いまここ」を動かす（いちばん新しく描いた地図に）
+  function showMe(lat, lon) {
+    const el = document.getElementById("you");
+    if (!el || !proj) return;
+    el.setAttribute("cx", (proj.S / 2 + (lon - proj.cx) * M_LON * proj.k).toFixed(1));
+    el.setAttribute("cy", (proj.S / 2 - (lat - proj.cy) * M_LAT * proj.k).toFixed(1));
+  }
+  window.ROUTE = { progress, showMe, load, routes, steps, svg, weight, BITS, W, ready: () => !!G };
 })();
