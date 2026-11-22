@@ -91,7 +91,7 @@
     return `<h2>${esc(t("callT"))}</h2><ul class="calls"><li><a href="tel:119">${esc(t("call119"))}</a></li><li><a href="tel:110">${esc(t("call110"))}</a></li><li><a href="tel:171">${esc(t("call171"))}</a></li></ul>
       <h2>${esc(t("wifiT"))}</h2><p>${esc(t("wifi"))}</p>
       <h2>${esc(t("keepT"))}</h2><p>${esc(ios ? t("keepIos") : t("keepAndroid"))}</p><p class="hint">${esc(ios ? t("keepAndroid") : t("keepIos"))}</p>
-      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html">${esc(t("qrSheet"))}</a></p>
+      <h2>${esc(t("shareT"))}</h2><p><button type="button" class="sub" data-tab="share">${esc(t("give"))}</button></p><p><a href="${FILE_MODE ? APP_URL : "./"}print.html${st.lang === "ja" ? "" : "?lang=" + st.lang}">${esc(t("qrSheet"))}</a></p>
       <h2>${esc(t("linksT"))}</h2><ul class="links">
         <li><a href="https://www.city.kawagoe.saitama.jp/kurashi/anshin/1001545/1001581/1001583.html" target="_blank" rel="noopener">${esc(t("lnCity"))}</a></li>
         <li><a href="https://www.city.kawagoe.saitama.jp/shisei/shisetsu/hinanjyo/1013361.html" target="_blank" rel="noopener">${esc(t("lnHinan"))}</a></li>
@@ -141,12 +141,31 @@
       if (rc.key !== key) rc = { key, res: ROUTE.routes(st.here, list.map((x) => x.p), st.hz === "fire" ? "fire" : st.hz) };
       if (!$("#route")) return;
       rc.res.forEach((r, i) => { const el = document.querySelector(`[data-rw="${i}"]`); if (el && r) el.textContent = walk(r.len); });
-      if (st.route != null) $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]);
+      if (st.route != null) { $("#route").innerHTML = routeHTML(list[st.route], rc.res[st.route]); if (follow.last) onPos(follow.last[0], follow.last[1]); }
     }, () => {
       const b = $("#route");
       if (b && st.route != null) b.innerHTML = `<p class="warn">${esc(t("routeNone"))}</p>`;
     });
   }
+  // 歩きながら見る：現在地を道順の地図に出し、残りの距離と、道からはずれたことを知らせる（位置は端末の中だけ）
+  const follow = { id: null, last: null };
+  function stopFollow() { if (follow.id != null) navigator.geolocation.clearWatch(follow.id); follow.id = null; follow.last = null; }
+  function onPos(lat, lon) {
+    follow.last = [lat, lon];
+    const r = rc.res && st.route != null ? rc.res[st.route] : null, msg = $("#follow-msg");
+    if (!r || !msg) return;
+    ROUTE.showMe(lat, lon);
+    const g = ROUTE.progress(r, lat, lon);
+    msg.textContent = g.left < 30 ? t("followArrive") : g.off > 60 ? fmt(t("followOff"), { d: dist(g.off) }) : fmt(t("followLeft"), { d: dist(g.left), min: Math.max(1, Math.ceil(g.left / 60)) });
+    msg.className = g.off > 60 && g.left >= 30 ? "warn" : "dd";
+  }
+  function startFollow() {
+    if (!navigator.geolocation) { $("#follow-msg").textContent = t("gpsFail"); return; }
+    follow.id = navigator.geolocation.watchPosition((p) => onPos(p.coords.latitude, p.coords.longitude), () => { const m = $("#follow-msg"); if (m) m.textContent = t("gpsFail"); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 });
+    const b = $("#follow"); b.textContent = "📍 " + t("followStop"); b.setAttribute("aria-pressed", "true");
+    $("#follow-msg").textContent = t("gpsWait");
+  }
+  window.KB.pos = onPos; // 検査用（GPS の動きをまねる）
   function routeHTML(x, r) {
     if (!x || !r) return `<p class="warn">${esc(t("routeNone"))}</p>`;
     const hz = st.hz === "fire" ? "fire" : st.hz, w = ROUTE.W[hz];
@@ -158,6 +177,7 @@
     h += `<figure class="rmap">${ROUTE.svg(r, hz, esc(t("routeMapNote")))}<figcaption>${esc(t("routeMapNote"))}</figcaption></figure>`;
     h += `<p class="hint">${esc(fmt(t("routeAvoid"), { list: avoid.map(([, k]) => name(k)).join("・") }))}</p>`;
     if (still.length) h += `<p class="warn" id="route-still">${esc(fmt(t("routeStill"), { list: still.map(([b, k]) => name(k) + " " + dist(r.by[b])).join("・") }))}</p>`;
+    h += `<p><button type="button" class="main" id="follow" aria-pressed="${follow.id != null}">📍 ${esc(t(follow.id != null ? "followStop" : "follow"))}</button></p><p class="dd" id="follow-msg" aria-live="polite"></p>`;
     h += `<ol class="rsteps">${ROUTE.steps(r).map((s) => `<li>${esc(turn(s))}</li>`).join("")}</ol>`;
     h += `<p class="warn">${esc(t("routeNote"))}</p><p class="hint">${esc(t("routeSrc"))}</p>`;
     return h;
@@ -225,8 +245,9 @@
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.tab) { st.tab = b.dataset.tab; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }
     if (b.dataset.hz) { st.hz = b.dataset.hz; render(); return; }
-    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
-    if (b.dataset.spot) { st.route = null; const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
+    if (b.id === "follow") { if (follow.id != null) { stopFollow(); render(); } else startFollow(); return; }
+    if (b.dataset.route) { const i = Number(b.dataset.route); st.route = st.route === i ? null : i; if (st.route == null) stopFollow(); render(); const r = $("#route"); if (r && st.route != null) r.scrollIntoView({ block: "start" }); return; }
+    if (b.dataset.spot) { st.route = null; stopFollow(); const s = SPOTS.find((x) => x.id === b.dataset.spot); st.here = { lat: s.lat, lon: s.lon, id: s.id, label: s.name[st.lang] || s.name.en }; render(); return; }
     if (b.id === "gps") return useGps();
     if (b.id === "compass") return compass();
     if (b.id === "give") { st.tab = "share"; render(); $("#view").focus({ preventScroll: true }); window.scrollTo(0, 0); return; }

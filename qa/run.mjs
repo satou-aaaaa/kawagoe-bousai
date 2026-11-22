@@ -92,9 +92,16 @@ try {
   const names = await page.locator(".places li b").allTextContents();
   check("場所を選ぶ：近い避難場所が5つ出る・方角と距離がある", names.length === 5 && (await page.locator(".places .dd").first().textContent()).match(/\d+m|km/), names.join("・"));
   const print = read("print.html");
-  const card = /<section class="poster" data-spot="tokinokane">(.*?)<\/section>/s.exec(print)[1];
+  const card = /<section class="poster" data-spot="tokinokane" data-lang="ja"[^>]*>(.*?)<\/section>/s.exec(print)[1];
   const paper = (cls) => [...(new RegExp(`<ol class="${cls}">(.*?)</ol>`, "s").exec(card)[1]).matchAll(/<b class="nm">([^<]+)<\/b>/g)].map((m) => m[1]);
   const paperQuake = paper("lq");
+  {
+    await page.waitForFunction(() => (document.querySelector('[data-rw="2"]') || {}).textContent, null, { timeout: 20000 });
+    const appWalk = (await page.locator(".rw").allTextContents()).slice(0, 3).map((x) => x.match(/約(.+?)（/)[1]);
+    const paperWalk = [...(/<ol class="lq">(.*?)<\/ol>/s.exec(card)[1]).matchAll(/🚶 ([^（(<]+?) ?[（(]/g)].map((m) => m[1]);
+    check("掲示用ポスター：地震の歩く距離が画面の道順と同じ（一番街）", appWalk.join() === paperWalk.join(), appWalk.join() + " / " + paperWalk.join());
+    check("掲示用ポスター：場所ごとに歩く道の線が地震3本・洪水3本ある", (card.match(/stroke="#b3261e" stroke-width="3"/g) || []).length === 3 && (card.match(/stroke="#1565c0" stroke-width="3"/g) || []).length === 3);
+  }
   check("掲示用ポスター：地震の近い順が画面と同じ（一番街）", paperQuake.join() === names.slice(0, 3).join(), paperQuake.join() + " / " + names.slice(0, 3).join());
   check("小さな地図：番号の点が5つ・北の印がある", (await page.locator(".mini .dot").count()) === 5 && (await page.locator(".mini .north").count()) === 1);
 
@@ -155,6 +162,19 @@ try {
   {
     const r = await page.evaluate(() => { const x = ROUTE.routes({ lat: 35.906883, lon: 139.483643 }, [PLACES[0]], "quake")[0]; let sum = 0; for (let i = 1; i < x.pts.length; i++) sum += KB.geo({ lat: x.pts[i - 1][0], lon: x.pts[i - 1][1] }, { lat: x.pts[i][0], lon: x.pts[i][1] }).d; return { sum, len: x.len - x.startGap - x.endGap, n: x.pts.length }; });
     check("道順：描く線の長さが道の長さと合う（道の形を正しく読めている）", r.n > 2 && Math.abs(r.sum - r.len) / r.len < 0.05, JSON.stringify(r));
+  }
+  {
+    // 歩きながら見る：道順の上を歩くと残りが減り、はずれると知らせ、着くと知らせる（GPS の動きは KB.pos でまねる）
+    const pts = await page.evaluate(() => { const r = ROUTE.routes({ lat: 35.906883, lon: 139.483643 }, [KB.nearest({ lat: 35.906883, lon: 139.483643 }, "flood", 5)[0].p], "flood")[0]; return [r.pts[Math.floor(r.pts.length / 3)], r.to]; });
+    await page.evaluate(() => KB.nearest({ lat: 35.906883, lon: 139.483643 }, "flood", 5));
+    await page.evaluate(([p]) => KB.pos(p[0], p[1]), pts);
+    const midMsg = await page.locator("#follow-msg").textContent();
+    const you = await page.locator("#you").getAttribute("cx");
+    await page.evaluate(([p]) => KB.pos(p[0] + 0.003, p[1]), pts);
+    const offMsg = await page.locator("#follow-msg").textContent();
+    await page.evaluate(([, z]) => KB.pos(z[0], z[1]), pts);
+    const endMsg = await page.locator("#follow-msg").textContent();
+    check("歩きながら：地図に現在地が出て、残りの距離・道からはずれた・着いたを知らせる", /のこり約/.test(midMsg) && Number(you) > 0 && /はなれています/.test(offMsg) && /着きました/.test(endMsg), [midMsg, you, offMsg, endMsg].join(" | "));
   }
   await page.click("[data-hz=quake]");
 
@@ -259,7 +279,21 @@ try {
   check("電波なし：道順も出る（道のデータを保存している）", (await page.locator("#route .rsteps li").count()) >= 1);
   const pp = await context.newPage();
   await pp.goto(base + "print.html");
-  check("電波なし：掲示用ポスターのページも開ける・場所ごとに地図とアプリの QR がある", (await pp.locator(".poster").count()) === SPOTS.length && (await pp.locator(".poster .map svg").count()) === SPOTS.length && (await pp.locator(".poster .qr svg").count()) === SPOTS.length);
+  const vis = () => pp.locator(".poster:visible");
+  check("電波なし：掲示用ポスターのページも開ける・場所ごとに地図とアプリの QR がある", (await vis().count()) === SPOTS.length && (await pp.locator(".poster:visible .map svg").count()) === SPOTS.length && (await pp.locator(".poster:visible .qr svg").count()) === SPOTS.length, JSON.stringify([await vis().count(), await pp.locator(".poster:visible .map svg").count(), await pp.locator(".poster:visible .qr svg").count(), await pp.evaluate(() => document.body.dataset.lang)]));
+  {
+    // 言語の切り替え：1枚に1つの言語だけ（2026-11-22「複数の言語が同時に出ていてわかりづらい」）
+    const jaOnly = await vis().evaluateAll((els) => els.length === 5 && els.every((e) => e.dataset.lang === "ja") && !/Earthquake|대피|避难/.test(els.map((e) => e.innerText).join("")));
+    await pp.click("[data-pick=en]");
+    const en = await vis().evaluateAll((els) => ({ n: els.length, en: els.every((e) => e.dataset.lang === "en"), txt: els.map((e) => e.innerText).join("") }));
+    const enOk = en.n === SPOTS.length && en.en && /Evacuation Sites/.test(en.txt) && !/地震|大雨|いまここ|避难|대피/.test(en.txt.replace(/<b class="nm">.*?<\/b>/g, ""));
+    await pp.reload();
+    const kept = await pp.evaluate(() => document.body.dataset.lang);
+    await pp.goto(base + "print.html?lang=ko");
+    const ko = await vis().evaluateAll((els) => els.every((e) => e.dataset.lang === "ko") && els.length > 0);
+    check("掲示用ポスター：言語ボタンで1つの言語だけになる・選んだ言語を覚える・?lang= でも開ける", jaOnly && enOk && kept === "en" && ko, JSON.stringify({ jaOnly, enOk, kept, ko, en: [en.n, en.en, en.txt.slice(0, 300)] }));
+    check("掲示用ポスター：5言語とも、場所ごとに1枚ある", (await pp.locator(".poster").count()) === SPOTS.length * LANGS.length);
+  }
   await context.setOffline(false);
   check("エラーが出ない", errors.length === 0, errors.join(" | "));
 } finally {
